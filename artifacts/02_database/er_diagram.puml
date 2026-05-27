@@ -1,0 +1,215 @@
+@startuml ER-diagram
+' Концептуальная ER-диаграмма ИС учёта заявок на обслуживание клиентов.
+' Нотация: Crow's Foot (Information Engineering).
+' Рендерить онлайн: https://www.plantuml.com/plantuml/uml
+' Или через VS Code (расширение PlantUML) / IDEA.
+
+!define ENTITY(name,label) entity name as "label" << (E,#FFCC66) >>
+!define WEAK(name,label)   entity name as "label" << (W,#CCCCFF) >>
+!define DICT(name,label)   entity name as "label" << (D,#CCFFCC) >>
+
+skinparam linetype ortho
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam entity {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+  FontName "PT Sans"
+}
+
+' ============ ОСНОВНЫЕ СУЩНОСТИ ============
+
+ENTITY(client, "Клиент\n(client)") {
+  * id : PK
+  --
+  * name : наименование
+    contact_person : контактное лицо
+  * phone : телефон
+    email : email
+  * created_at : дата регистрации
+}
+
+ENTITY(employee, "Сотрудник\n(employee)") {
+  * id : PK
+  --
+  * full_name : ФИО
+    position : должность
+  * login : логин (UQ)
+  * password_hash : хеш пароля
+  * role_id : FK -> role
+  * is_active : признак активности
+  * created_at : дата создания
+}
+
+ENTITY(request, "Заявка\n(request)") {
+  * id : PK
+  --
+  * number : номер (UQ)
+  * client_id : FK -> client
+  * service_id : FK -> service
+  * status_id : FK -> status
+  * priority_id : FK -> priority
+    assignee_id : FK -> employee
+  * created_by : FK -> employee
+  * title : краткое описание
+    description : подробное описание
+  * created_at : дата создания
+    due_date : срок выполнения
+    closed_at : дата закрытия
+    custom_fields : JSONB (low-code)
+}
+
+ENTITY(comment, "Комментарий\n(comment)") {
+  * id : PK
+  --
+  * request_id : FK -> request
+  * author_id : FK -> employee
+  * text : текст
+  * created_at : дата
+    is_internal : внутренний?
+}
+
+ENTITY(attachment, "Вложение\n(attachment)") {
+  * id : PK
+  --
+  * request_id : FK -> request
+  * file_name : имя файла
+  * file_path : путь
+  * file_size : размер
+  * uploaded_by : FK -> employee
+  * uploaded_at : дата загрузки
+}
+
+ENTITY(status_history, "История статусов\n(status_history)") {
+  * id : PK
+  --
+  * request_id : FK -> request
+  * status_from_id : FK -> status (NULL для старта)
+  * status_to_id : FK -> status
+  * changed_by : FK -> employee
+  * changed_at : дата
+    comment : причина перехода
+}
+
+ENTITY(audit_log, "Аудит-журнал\n(audit_log)") {
+  * id : PK
+  --
+  * actor_id : FK -> employee
+  * action : действие
+  * entity_type : тип сущности
+  * entity_id : id сущности
+    payload : JSONB (детали)
+  * created_at : дата
+}
+
+' ============ СПРАВОЧНИКИ ============
+
+DICT(role, "Роль\n(role)") {
+  * id : PK
+  --
+  * code : UQ
+  * name : название
+}
+
+DICT(service, "Услуга\n(service)") {
+  * id : PK
+  --
+  * name : название
+    description : описание
+    default_duration : плановое время
+  * is_active : активна?
+}
+
+DICT(status, "Статус\n(status)") {
+  * id : PK
+  --
+  * code : UQ
+  * name : название
+  * order_num : порядок
+  * is_terminal : финальный?
+}
+
+DICT(priority, "Приоритет\n(priority)") {
+  * id : PK
+  --
+  * code : UQ
+  * name : название
+  * sla_hours : часов на решение
+}
+
+DICT(team, "Группа исполнителей\n(team)") {
+  * id : PK
+  --
+  * name : название
+}
+
+ENTITY(employee_team, "Сотрудник↔Группа\n(employee_team)") {
+  * employee_id : FK
+  * team_id : FK
+}
+
+DICT(routing_rule, "Правило маршрутизации\n(routing_rule)") {
+  * id : PK
+  --
+  * service_id : FK -> service
+  * team_id : FK -> team
+    priority : приоритет правила
+  * is_active : активно?
+}
+
+' ============ LOW-CODE: КОНСТРУКТОР ПОЛЕЙ ============
+
+ENTITY(field_definition, "Определение поля\n(field_definition)") {
+  * id : PK
+  --
+  * code : UQ (ключ в JSONB)
+  * label : подпись
+  * field_type : text/number/date/select/checkbox
+    options : JSONB (варианты для select)
+  * is_required : обязательное?
+  * order_num : порядок отображения
+  * is_active : активно?
+  * created_at : дата создания
+}
+
+' ============ СВЯЗИ ============
+
+client     ||--o{ request          : "1 клиент имеет\nмного заявок"
+service    ||--o{ request          : "услуга → заявки"
+status     ||--o{ request          : "текущий статус"
+priority   ||--o{ request          : "приоритет"
+employee   ||--o{ request          : "исполнитель"
+employee   ||--o{ request          : "автор"
+
+request    ||--o{ comment          : "1:N"
+employee   ||--o{ comment          : "автор комм."
+
+request    ||--o{ attachment       : "1:N"
+employee   ||--o{ attachment       : "загрузил"
+
+request    ||--o{ status_history   : "история"
+status     ||--o{ status_history   : "из статуса"
+status     ||--o{ status_history   : "в статус"
+employee   ||--o{ status_history   : "изменил"
+
+role       ||--o{ employee         : "у сотрудника одна роль"
+
+team       ||--o{ employee_team    : ""
+employee   ||--o{ employee_team    : ""
+
+service    ||--o{ routing_rule     : ""
+team       ||--o{ routing_rule     : ""
+
+employee   ||--o{ audit_log        : "автор действия"
+
+note right of request
+  **custom_fields (JSONB)** —
+  значения пользовательских полей,
+  чьи описания хранятся в
+  **field_definition**.
+  Это и есть low-code-механизм
+  расширения карточки заявки
+  без миграций БД.
+end note
+
+@enduml

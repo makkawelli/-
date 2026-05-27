@@ -1,0 +1,61 @@
+@startuml activity_request_lifecycle
+' Диаграмма деятельности (UML Activity) - детальный жизненный цикл заявки
+' внутри ИС с акцентом на машину состояний (FSM).
+' Рендер: https://www.plantuml.com/plantuml/uml
+
+title Жизненный цикл заявки внутри ИС\n//диаграмма деятельности с переходами статусов//
+
+skinparam shadowing false
+skinparam roundcorner 6
+
+start
+
+:Регистрация заявки\n(пользователь или API);
+note right: status = "new"
+
+if (Сработало правило маршрутизации?) then (да)
+  :Автоматическое назначение группы;
+else (нет)
+  :Заявка в очереди оператора;
+endif
+
+:Назначение исполнителя;
+note right: status = "in_progress"\nзапись в status_history
+
+repeat
+  :Исполнитель работает над заявкой;
+  :Добавляет комментарии и вложения;
+
+  if (Запрос отмены?) then (да)
+    :Заявка отменена;
+    note right: status = "cancelled"\nclosed_at = NOW()
+    stop
+  else (нет)
+  endif
+
+  if (Требуется приостановка?) then (да)
+    :Указывает причину;
+    note right: status = "on_hold"
+    :Ожидание внешнего события;
+    :Возобновление;
+    note right: status = "in_progress"
+  else (нет)
+  endif
+
+repeat while (Работа завершена?) is (нет) not (да)
+
+:Передача на проверку;
+note right: status = "review"
+
+if (Менеджер принимает результат?) then (да)
+  :Закрытие заявки;
+  note right: status = "done"\nclosed_at = NOW()
+  :Уведомление клиента\nи запись в audit_log;
+  stop
+else (нет)
+  :Возврат в работу\nс комментарием;
+  note right: status = "in_progress"
+  -[hidden]->
+endif
+
+@enduml

@@ -1,0 +1,128 @@
+@startuml use_case
+' Диаграмма вариантов использования ИС учёта заявок на обслуживание клиентов.
+' Нотация: UML 2.5 Use Case.
+' Рендер: https://www.plantuml.com/plantuml/uml
+
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam ActorBorderColor #333
+skinparam UsecaseBackgroundColor #FFFFFF
+skinparam UsecaseBorderColor #333
+
+' ======== АКТОРЫ ========
+actor "Клиент"        as Client
+actor "Оператор"      as Operator
+actor "Исполнитель"   as Executor
+actor "Менеджер"      as Manager
+actor "Администратор" as Admin
+actor "Email-сервис"  as Email <<system>>
+
+' ======== РАЗДЕЛЫ СИСТЕМЫ ========
+rectangle "Информационная система учёта заявок" {
+
+  package "Работа с заявками" as PkgRequests {
+    usecase "UC-01\nСоздать заявку"            as UC01
+    usecase "UC-02\nПросмотреть список заявок" as UC02
+    usecase "UC-03\nОткрыть карточку заявки"   as UC03
+    usecase "UC-04\nДобавить комментарий"      as UC04
+    usecase "UC-05\nПрикрепить файл"           as UC05
+    usecase "UC-06\nОтменить заявку"           as UC06
+  }
+
+  package "Назначение и исполнение" as PkgAssign {
+    usecase "UC-07\nНазначить исполнителя"     as UC07
+    usecase "UC-08\nИзменить статус заявки"    as UC08
+    usecase "UC-09\nПриостановить/возобновить" as UC09
+    usecase "UC-10\nЗакрыть заявку"            as UC10
+  }
+
+  package "Аналитика" as PkgAnalytics {
+    usecase "UC-11\nПросмотреть дашборд"       as UC11
+    usecase "UC-12\nПостроить отчёт"           as UC12
+    usecase "UC-13\nВыгрузить отчёт в файл"    as UC13
+  }
+
+  package "Администрирование" as PkgAdmin {
+    usecase "UC-14\nУправлять пользователями"  as UC14
+    usecase "UC-15\nНастроить справочники"     as UC15
+    usecase "UC-16\nНастроить правила маршрут." as UC16
+    usecase "UC-17\nНастроить кастомные поля"  as UC17 #LightYellow
+    usecase "UC-18\nПросмотреть аудит-журнал"  as UC18
+  }
+
+  package "Аутентификация" as PkgAuth {
+    usecase "UC-19\nВойти в систему"           as UC19
+    usecase "UC-20\nСменить пароль"            as UC20
+  }
+
+  ' ======== include / extend ========
+  UC01 .[#0066CC]> UC19 : <<include>>
+  UC03 .[#0066CC]> UC19 : <<include>>
+  UC07 .[#0066CC]> UC03 : <<include>>
+  UC08 .[#0066CC]> UC03 : <<include>>
+  UC09 .[#999900]> UC08 : <<extend>>
+  UC10 .[#999900]> UC08 : <<extend>>
+  UC04 .[#0066CC]> UC03 : <<include>>
+  UC05 .[#0066CC]> UC03 : <<include>>
+  UC13 .[#0066CC]> UC12 : <<include>>
+}
+
+' ======== СВЯЗИ АКТОРОВ С UC ========
+Client    --> UC19
+Client    --> UC01
+Client    --> UC02
+Client    --> UC03
+Client    --> UC04
+Client    --> UC05
+Client    --> UC06
+
+Operator  --> UC19
+Operator  --> UC01
+Operator  --> UC02
+Operator  --> UC03
+Operator  --> UC04
+Operator  --> UC05
+Operator  --> UC07
+Operator  --> UC20
+
+Executor  --> UC19
+Executor  --> UC02
+Executor  --> UC03
+Executor  --> UC04
+Executor  --> UC05
+Executor  --> UC08
+Executor  --> UC09
+Executor  --> UC10
+Executor  --> UC20
+
+Manager   --> UC19
+Manager   --> UC02
+Manager   --> UC07
+Manager   --> UC11
+Manager   --> UC12
+Manager   --> UC13
+Manager   --> UC20
+
+Admin     --> UC14
+Admin     --> UC15
+Admin     --> UC16
+Admin     --> UC17
+Admin     --> UC18
+Admin     --> UC20
+
+Email     <-- UC01 : уведомление о регистрации
+Email     <-- UC07 : уведомление о назначении
+Email     <-- UC10 : уведомление о закрытии
+
+note right of UC17
+  **Low-code-конструктор полей** —
+  ключевая особенность системы
+  относительно конкурентов.
+  Описание поля сохраняется в
+  field_definition, значения —
+  в JSONB-колонке request.custom_fields.
+end note
+
+@enduml
