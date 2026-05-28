@@ -1,0 +1,32 @@
+# Виртуальное окружение Python
+venv/
+.venv/
+env/
+ENV/
+
+# Кэш Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*$py.class
+
+# Локальные настройки и секреты
+.env
+*.local
+
+# База данных SQLite (на случай, если кто-то запустит без PostgreSQL)
+*.sqlite3
+*.sqlite3-journal
+
+# Загруженные пользователями файлы
+media/
+
+# Собранная статика
+staticfiles/
+
+# Редакторы
+.idea/
+.vscode/
+*.swp
+.DS_Store
