@@ -22,4 +22,13 @@ urlpatterns = [
     path("requests/<str:number>/transition/<str:to_status>/",
                                                      views.request_transition,  name="request_transition"),
     path("requests/<str:number>/comment/",           views.request_add_comment, name="request_add_comment"),
+
+    # Отчёты (только для менеджера/админа).
+    path("reports/",                  views.reports_index,     name="reports_index"),
+    path("reports/by-period/",        views.report_period,     name="report_period"),
+    path("reports/by-period.csv",     views.report_period_csv, name="report_period_csv"),
+    path("reports/executors/",        views.report_executors_view,     name="report_executors"),
+    path("reports/executors.csv",     views.report_executors_csv,      name="report_executors_csv"),
+    path("reports/sla/",              views.report_sla_view,   name="report_sla"),
+    path("reports/sla.csv",           views.report_sla_csv,    name="report_sla_csv"),
 ]

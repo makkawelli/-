@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <div class="text-muted small mb-1">
+                <a href="{% url 'core:reports_index' %}" class="text-muted text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> К списку отчётов
+                </a>
+            </div>
+            <h1 class="h3 mb-0">Загрузка исполнителей</h1>
+        </div>
+        <a href="{% url 'core:report_executors_csv' %}" class="btn btn-outline-success">
+            <i class="bi bi-download"></i> Скачать CSV
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr class="small text-muted">
+                        <th class="ps-3">Сотрудник</th>
+                        <th>Роль</th>
+                        <th class="text-end">Всего</th>
+                        <th class="text-end">Открытых</th>
+                        <th class="text-end">Выполнено</th>
+                        <th class="text-end">Просрочено</th>
+                        <th class="text-end pe-3">Среднее, ч</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in rows %}
+                        <tr>
+                            <td class="ps-3">
+                                <strong>{{ r.full_name }}</strong>
+                                <span class="text-muted small"> · {{ r.username }}</span>
+                            </td>
+                            <td><span class="badge bg-light text-dark">{{ r.role }}</span></td>
+                            <td class="text-end">{{ r.total }}</td>
+                            <td class="text-end">{{ r.open }}</td>
+                            <td class="text-end text-success">{{ r.done }}</td>
+                            <td class="text-end {% if r.overdue %}text-danger fw-bold{% else %}text-muted{% endif %}">
+                                {{ r.overdue }}
+                            </td>
+                            <td class="text-end pe-3">
+                                {% if r.avg_hours is not None %}
+                                    {{ r.avg_hours }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                Нет данных для отображения.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="text-muted small mt-3">
+        <strong>Просрочено</strong> — открытые заявки, у которых истёк срок выполнения (due_date).
+        <br>
+        <strong>Среднее, ч</strong> — среднее время от создания до закрытия по выполненным заявкам.
+    </div>
+
+{% endblock %}

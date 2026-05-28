@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <div class="text-muted small mb-1">
+                <a href="{% url 'core:reports_index' %}" class="text-muted text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> К списку отчётов
+                </a>
+            </div>
+            <h1 class="h3 mb-0">Соблюдение SLA</h1>
+        </div>
+        <a href="{% url 'core:report_sla_csv' %}" class="btn btn-outline-success">
+            <i class="bi bi-download"></i> Скачать CSV
+        </a>
+    </div>
+
+    {# ---------- Сводка ---------- #}
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Закрыто всего</div>
+                    <div class="display-6">{{ totals.total_closed }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success h-100">
+                <div class="card-body">
+                    <div class="text-muted small">В срок</div>
+                    <div class="display-6 text-success">{{ totals.in_time }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-danger h-100">
+                <div class="card-body">
+                    <div class="text-muted small">С просрочкой</div>
+                    <div class="display-6 text-danger">{{ totals.overdue }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-primary h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Соблюдение SLA</div>
+                    <div class="display-6 text-primary">
+                        {% if totals.sla_pct is not None %}
+                            {{ totals.sla_pct }}%
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ---------- Детализация по приоритетам ---------- #}
+    <div class="card">
+        <div class="card-header bg-white">
+            <h2 class="h6 mb-0">Детализация по приоритетам</h2>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr class="small text-muted">
+                        <th class="ps-3">Приоритет</th>
+                        <th class="text-end">SLA, ч</th>
+                        <th class="text-end">Закрыто всего</th>
+                        <th class="text-end">В срок</th>
+                        <th class="text-end">Просрочено</th>
+                        <th class="text-end">Соблюдение</th>
+                        <th class="text-end pe-3">Открытых просрочено</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in rows %}
+                        <tr>
+                            <td class="ps-3"><strong>{{ r.priority }}</strong></td>
+                            <td class="text-end">{{ r.sla_hours }}</td>
+                            <td class="text-end">{{ r.total_closed }}</td>
+                            <td class="text-end text-success">{{ r.in_time }}</td>
+                            <td class="text-end {% if r.overdue %}text-danger{% endif %}">
+                                {{ r.overdue }}
+                            </td>
+                            <td class="text-end">
+                                {% if r.sla_pct is not None %}
+                                    {% if r.sla_pct >= 95 %}
+                                        <span class="badge bg-success">{{ r.sla_pct }}%</span>
+                                    {% elif r.sla_pct >= 80 %}
+                                        <span class="badge bg-warning text-dark">{{ r.sla_pct }}%</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">{{ r.sla_pct }}%</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-3 {% if r.open_overdue %}text-danger fw-bold{% else %}text-muted{% endif %}">
+                                {{ r.open_overdue }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="text-muted small mt-3">
+        <strong>SLA</strong> (Service Level Agreement) — норматив времени решения заявки,
+        зависит от приоритета. Заявка считается выполненной в срок,
+        если <code>closed_at &le; due_date</code>.
+    </div>
+
+{% endblock %}

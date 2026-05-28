@@ -62,6 +62,15 @@ def can_comment_request(user, request_obj: Request) -> bool:
     return can_view_request(user, request_obj)
 
 
+def can_view_reports(user) -> bool:
+    """Просматривать отчёты могут менеджер и администратор.
+
+    Оператор и исполнитель к аналитике не допускаются — это управленческий
+    инструмент.
+    """
+    return _role(user) in {"admin", "manager"}
+
+
 # ---------- Видимость списка заявок -----------------------------------------
 
 def visible_requests_qs(user):

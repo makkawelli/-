@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% load core_tags %}
+
+{% block content %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-bar-chart"></i> Отчёты
+        </h1>
+        <span class="text-muted small">
+            Обновлено: {% now "d.m.Y H:i" %}
+        </span>
+    </div>
+
+    {# ---------- Живые метрики ---------- #}
+    <h2 class="h5 mb-3">Текущая ситуация</h2>
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-4">
+            <div class="card border-primary h-100">
+                <div class="card-body">
+                    <div class="text-muted small">
+                        <i class="bi bi-folder2-open"></i> Открытых заявок
+                    </div>
+                    <div class="display-5 text-primary">{{ metrics.open_total }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-danger h-100">
+                <div class="card-body">
+                    <div class="text-muted small">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Просрочено по SLA
+                    </div>
+                    <div class="display-5 text-danger">{{ metrics.overdue }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-warning h-100">
+                <div class="card-body">
+                    <div class="text-muted small">
+                        <i class="bi bi-question-circle"></i> Без исполнителя
+                    </div>
+                    <div class="display-5 text-warning">{{ metrics.unassigned }}</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <h2 class="h5 mb-3">Открытые — по статусам</h2>
+            <div class="card">
+                <div class="card-body p-0">
+                    <table class="table m-0">
+                        <tbody>
+                            {% for s in metrics.by_status %}
+                                <tr>
+                                    <td class="ps-3">{{ s.status__name }}</td>
+                                    <td class="text-end pe-3">
+                                        <span class="badge bg-light text-dark">{{ s.cnt }}</span>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr><td class="text-muted text-center p-3">Нет открытых заявок</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <h2 class="h5 mb-3">Открытые — по приоритетам</h2>
+            <div class="card">
+                <div class="card-body p-0">
+                    <table class="table m-0">
+                        <tbody>
+                            {% for p in metrics.by_priority %}
+                                <tr>
+                                    <td class="ps-3">{{ p.priority__name }}</td>
+                                    <td class="text-end pe-3">
+                                        <span class="badge bg-light text-dark">{{ p.cnt }}</span>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr><td class="text-muted text-center p-3">Нет открытых заявок</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ---------- Карточки доступных отчётов ---------- #}
+    <h2 class="h5 mb-3">Подробные отчёты</h2>
+    <div class="row g-3">
+
+        <div class="col-md-4">
+            <a href="{% url 'core:report_period' %}" class="card h-100 text-decoration-none text-body">
+                <div class="card-body">
+                    <h3 class="h5">
+                        <i class="bi bi-calendar3 text-primary"></i>
+                        Динамика по периоду
+                    </h3>
+                    <p class="text-muted small mb-0">
+                        Сколько заявок создано и закрыто по дням за выбранный период.
+                        С графиком и экспортом в CSV.
+                    </p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'core:report_executors' %}" class="card h-100 text-decoration-none text-body">
+                <div class="card-body">
+                    <h3 class="h5">
+                        <i class="bi bi-people text-primary"></i>
+                        Загрузка исполнителей
+                    </h3>
+                    <p class="text-muted small mb-0">
+                        Сколько заявок на каждом сотруднике, сколько закрыто,
+                        просрочено, среднее время решения.
+                    </p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'core:report_sla' %}" class="card h-100 text-decoration-none text-body">
+                <div class="card-body">
+                    <h3 class="h5">
+                        <i class="bi bi-stopwatch text-primary"></i>
+                        Соблюдение SLA
+                    </h3>
+                    <p class="text-muted small mb-0">
+                        Какой процент заявок закрыт в срок по каждому
+                        приоритету. Подсветка просрочки.
+                    </p>
+                </div>
+            </a>
+        </div>
+
+    </div>
+
+{% endblock %}

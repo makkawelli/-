@@ -53,11 +53,14 @@
                                 <i class="bi bi-people"></i> Клиенты
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link disabled" aria-disabled="true" href="#">
-                                <i class="bi bi-bar-chart"></i> Отчёты
-                            </a>
-                        </li>
+                        {% if user.is_superuser or user.role and user.role.code == "manager" %}
+                            <li class="nav-item">
+                                <a class="nav-link{% if request.resolver_match.url_name == 'reports_index' or request.resolver_match.url_name == 'report_period' or request.resolver_match.url_name == 'report_executors' or request.resolver_match.url_name == 'report_sla' %} active{% endif %}"
+                                   href="{% url 'core:reports_index' %}">
+                                    <i class="bi bi-bar-chart"></i> Отчёты
+                                </a>
+                            </li>
+                        {% endif %}
                         {% if user.is_staff %}
                             <li class="nav-item">
                                 <a class="nav-link" href="/admin/" target="_blank">

@@ -1,16 +1,18 @@
 """Контроллеры приложения core (Django views)."""
 from __future__ import annotations
 
+import csv
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
-from django.http import HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from . import forms, models, permissions, services
+from . import forms, models, permissions, reports, services
 
 
 # =============================================================================
@@ -289,3 +291,159 @@ def request_add_comment(request, number: str):
         messages.error(request, "Не удалось добавить комментарий: текст обязателен.")
 
     return redirect(reverse("core:request_detail", args=[req.number]) + "#comments")
+
+
+
+# =============================================================================
+# ОТЧЁТЫ (только для менеджера/админа)
+# =============================================================================
+def _require_reports_access(user):
+    """Возвращает HttpResponseForbidden, если у пользователя нет прав на отчёты."""
+    if not permissions.can_view_reports(user):
+        return HttpResponseForbidden(
+            "Раздел отчётов доступен только менеджеру и администратору."
+        )
+    return None
+
+
+@login_required
+def reports_index(request):
+    """Главная страница раздела отчётов: «живые» метрики + ссылки на отчёты."""
+    forbidden = _require_reports_access(request.user)
+    if forbidden:
+        return forbidden
+
+    context = {
+        "page_title": "Отчёты",
+        "metrics": reports.live_dashboard_metrics(),
+    }
+    return render(request, "core/reports/index.html", context)
+
+
+# ----- Отчёт 1: динамика по периоду -----------------------------------------
+def _read_period_from_request(request):
+    """Извлекает диапазон дат из GET (date_from, date_to). Сбрасывает на default."""
+    df = reports.parse_date(request.GET.get("date_from"))
+    dt_ = reports.parse_date(request.GET.get("date_to"))
+    default_from, default_to = reports.default_period()
+    return df or default_from, dt_ or default_to
+
+
+@login_required
+def report_period(request):
+    forbidden = _require_reports_access(request.user)
+    if forbidden:
+        return forbidden
+
+    date_from, date_to = _read_period_from_request(request)
+    data = reports.report_by_period(date_from, date_to)
+    context = {
+        "page_title": "Отчёт: динамика по периоду",
+        "date_from": date_from,
+        "date_to": date_to,
+        **data,
+    }
+    return render(request, "core/reports/by_period.html", context)
+
+
+@login_required
+def report_period_csv(request):
+    forbidden = _require_reports_access(request.user)
+    if forbidden:
+        return forbidden
+
+    date_from, date_to = _read_period_from_request(request)
+    data = reports.report_by_period(date_from, date_to)
+
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    # \ufeff — BOM, чтобы Excel корректно открывал кириллицу.
+    response.write("\ufeff")
+    response["Content-Disposition"] = (
+        f'attachment; filename="report_period_{date_from}_{date_to}.csv"'
+    )
+    writer = csv.writer(response, delimiter=";")
+    writer.writerow(["Дата", "Создано", "Закрыто"])
+    for row in data["rows"]:
+        writer.writerow([row["date"].strftime("%d.%m.%Y"), row["created"], row["closed"]])
+    writer.writerow([])
+    writer.writerow(["Итого", data["totals"]["created"], data["totals"]["closed"]])
+    return response
+
+
+# ----- Отчёт 2: загрузка исполнителей ---------------------------------------
+@login_required
+def report_executors_view(request):
+    forbidden = _require_reports_access(request.user)
+    if forbidden:
+        return forbidden
+
+    rows = reports.report_executors()
+    context = {
+        "page_title": "Отчёт: загрузка исполнителей",
+        "rows": rows,
+    }
+    return render(request, "core/reports/executors.html", context)
+
+
+@login_required
+def report_executors_csv(request):
+    forbidden = _require_reports_access(request.user)
+    if forbidden:
+        return forbidden
+
+    rows = reports.report_executors()
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response.write("\ufeff")
+    response["Content-Disposition"] = 'attachment; filename="report_executors.csv"'
+    writer = csv.writer(response, delimiter=";")
+    writer.writerow(["ФИО", "Логин", "Роль", "Всего", "Открытых", "Выполнено",
+                     "Просрочено", "Среднее время решения, ч"])
+    for r in rows:
+        writer.writerow([
+            r["full_name"], r["username"], r["role"],
+            r["total"], r["open"], r["done"], r["overdue"],
+            "" if r["avg_hours"] is None else r["avg_hours"],
+        ])
+    return response
+
+
+# ----- Отчёт 3: SLA ---------------------------------------------------------
+@login_required
+def report_sla_view(request):
+    forbidden = _require_reports_access(request.user)
+    if forbidden:
+        return forbidden
+
+    data = reports.report_sla()
+    context = {
+        "page_title": "Отчёт: соблюдение SLA",
+        **data,
+    }
+    return render(request, "core/reports/sla.html", context)
+
+
+@login_required
+def report_sla_csv(request):
+    forbidden = _require_reports_access(request.user)
+    if forbidden:
+        return forbidden
+
+    data = reports.report_sla()
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response.write("\ufeff")
+    response["Content-Disposition"] = 'attachment; filename="report_sla.csv"'
+    writer = csv.writer(response, delimiter=";")
+    writer.writerow(["Приоритет", "SLA, ч", "Закрыто всего", "В срок",
+                     "Просрочено", "Соблюдение, %", "Открытых просрочено"])
+    for r in data["rows"]:
+        writer.writerow([
+            r["priority"], r["sla_hours"], r["total_closed"],
+            r["in_time"], r["overdue"],
+            "" if r["sla_pct"] is None else r["sla_pct"],
+            r["open_overdue"],
+        ])
+    t = data["totals"]
+    writer.writerow([])
+    writer.writerow(["Итого", "", t["total_closed"], t["in_time"], t["overdue"],
+                     "" if t["sla_pct"] is None else t["sla_pct"], t["open_overdue"]])
+    return response

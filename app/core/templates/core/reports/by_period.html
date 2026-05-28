@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <div>
+            <div class="text-muted small mb-1">
+                <a href="{% url 'core:reports_index' %}" class="text-muted text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> К списку отчётов
+                </a>
+            </div>
+            <h1 class="h3 mb-0">Динамика заявок по периоду</h1>
+        </div>
+        <a href="{% url 'core:report_period_csv' %}?date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}"
+           class="btn btn-outline-success">
+            <i class="bi bi-download"></i> Скачать CSV
+        </a>
+    </div>
+
+    {# ---------- Фильтры ---------- #}
+    <form method="get" class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small text-muted mb-1">Период с</label>
+                    <input type="date" name="date_from" value="{{ date_from|date:'Y-m-d' }}"
+                           class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small text-muted mb-1">по</label>
+                    <input type="date" name="date_to" value="{{ date_to|date:'Y-m-d' }}"
+                           class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-funnel"></i> Применить
+                    </button>
+                    <a href="{% url 'core:report_period' %}" class="btn btn-outline-secondary">
+                        Сброс
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    {# ---------- Сводка ---------- #}
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Период</div>
+                    <div class="h5">
+                        {{ date_from|date:"d.m.Y" }} — {{ date_to|date:"d.m.Y" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-primary h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Создано заявок</div>
+                    <div class="display-6 text-primary">{{ totals.created }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-success h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Закрыто заявок</div>
+                    <div class="display-6 text-success">{{ totals.closed }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ---------- График ---------- #}
+    <div class="card mb-4">
+        <div class="card-body">
+            <canvas id="chartByPeriod" height="80"></canvas>
+        </div>
+    </div>
+
+    {# ---------- Таблица ---------- #}
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr class="small text-muted">
+                        <th class="ps-3">Дата</th>
+                        <th class="text-end">Создано</th>
+                        <th class="text-end pe-3">Закрыто</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in rows %}
+                        <tr>
+                            <td class="ps-3">{{ r.date|date:"d.m.Y, l" }}</td>
+                            <td class="text-end">{{ r.created }}</td>
+                            <td class="text-end pe-3">{{ r.closed }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="fw-bold">
+                        <td class="ps-3">Итого</td>
+                        <td class="text-end">{{ totals.created }}</td>
+                        <td class="text-end pe-3">{{ totals.closed }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+    const ctx = document.getElementById("chartByPeriod").getContext("2d");
+    new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: {{ chart.labels|safe }},
+            datasets: [
+                {
+                    label: "Создано",
+                    data: {{ chart.created|safe }},
+                    backgroundColor: "rgba(13, 110, 253, 0.7)",
+                    borderColor: "rgba(13, 110, 253, 1)",
+                    borderWidth: 1,
+                },
+                {
+                    label: "Закрыто",
+                    data: {{ chart.closed|safe }},
+                    backgroundColor: "rgba(25, 135, 84, 0.6)",
+                    borderColor: "rgba(25, 135, 84, 1)",
+                    borderWidth: 1,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0 } },
+            },
+            plugins: {
+                legend: { position: "top" },
+                title: { display: false },
+            },
+        },
+    });
+</script>
+{% endblock %}
