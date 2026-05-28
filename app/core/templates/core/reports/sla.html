@@ -16,6 +16,15 @@
         </a>
     </div>
 
+    <div class="alert alert-info small mb-4">
+        <i class="bi bi-info-circle"></i>
+        В этом отчёте показаны <strong>две разные метрики</strong>:
+        <strong>«Соблюдение SLA»</strong> — историческая статистика по уже
+        <em>закрытым</em> заявкам (доля закрытых в срок);
+        <strong>«Открытых просрочено»</strong> — текущая ситуация: сколько
+        ещё <em>не закрытых</em> заявок уже превысили срок.
+    </div>
+
     {# ---------- Сводка ---------- #}
     <div class="row g-3 mb-4">
         <div class="col-md-3">
@@ -53,10 +62,34 @@
                             <span class="text-muted">—</span>
                         {% endif %}
                     </div>
+                    <div class="text-muted small">по закрытым</div>
                 </div>
             </div>
         </div>
     </div>
+
+    {# ---------- Текущая просрочка (открытые) ---------- #}
+    {% if totals.open_overdue %}
+        <div class="card border-danger mb-4">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-danger fw-bold h5 mb-1">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Сейчас просрочено: {{ totals.open_overdue }} открытых заявок
+                    </div>
+                    <div class="text-muted small">
+                        Эти заявки уже превысили срок выполнения, но ещё не закрыты.
+                        Они не учитываются в проценте соблюдения выше — но требуют
+                        внимания немедленно.
+                    </div>
+                </div>
+                <a href="{% url 'core:request_list' %}?only_open=on"
+                   class="btn btn-outline-danger">
+                    Открыть список
+                </a>
+            </div>
+        </div>
+    {% endif %}
 
     {# ---------- Детализация по приоритетам ---------- #}
     <div class="card">
