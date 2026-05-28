@@ -2,51 +2,88 @@
 
 {% block content %}
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-lg-10">
 
-            <div class="card shadow-sm">
-                <div class="card-body p-5">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body p-4">
                     <h1 class="card-title h3 mb-3">
                         Информационная система учёта заявок
                     </h1>
-
-                    <p class="lead">
-                        Прототип успешно запущен.
-                        Соединение с PostgreSQL установлено, шаблоны
-                        отрисовываются.
+                    <p class="lead mb-2">
+                        Прототип запущен. Соединение с PostgreSQL установлено.
+                        Структура БД создана.
                     </p>
-
-                    <p class="text-muted mb-4">
-                        Это базовая страница, чтобы убедиться, что окружение
-                        собрано правильно. На следующих шагах появятся
-                        страницы для работы с заявками, клиентами и отчётами.
+                    <p class="text-muted mb-0">
+                        На текущем шаге доступна работа в админке Django:
+                        <a href="/admin/">/admin/</a>.
+                        Веб-интерфейс для пользователей появится на следующих
+                        шагах разработки.
                     </p>
+                </div>
+            </div>
 
-                    <hr>
-
-                    <h2 class="h5">Текущее окружение</h2>
-                    <dl class="row mb-0">
-                        <dt class="col-sm-3">Django</dt>
-                        <dd class="col-sm-9">
-                            <code>{{ request.META.SERVER_SOFTWARE|default:"runserver" }}</code>
-                        </dd>
-
-                        <dt class="col-sm-3">Пользователь</dt>
-                        <dd class="col-sm-9">
+            <h2 class="h5 mb-3">Текущее наполнение БД</h2>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4 col-sm-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="text-muted small">Заявок всего</div>
+                            <div class="display-6">{{ stats.requests_total }}</div>
+                            <div class="text-success small">
+                                открытых: {{ stats.requests_open }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="text-muted small">Клиентов</div>
+                            <div class="display-6">{{ stats.clients_total }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="text-muted small">Услуг</div>
+                            <div class="display-6">{{ stats.services_total }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="text-muted small">Сотрудников</div>
+                            <div class="display-6">{{ stats.employees_total }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="text-muted small">Кастомных полей</div>
+                            <div class="display-6">{{ stats.field_defs_total }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <div class="card h-100 bg-light">
+                        <div class="card-body">
+                            <div class="text-muted small">Текущий пользователь</div>
                             {% if user.is_authenticated %}
-                                {{ user.get_full_name|default:user.username }}
-                                ({{ user.email|default:"без email" }})
+                                <div class="fs-5">
+                                    {{ user.get_full_name|default:user.username }}
+                                </div>
+                                <div class="text-muted small">
+                                    {{ user.email|default:"без email" }}
+                                </div>
                             {% else %}
-                                <span class="text-muted">не вошёл</span>
-                                — <a href="{% url 'login' %}">войти</a>
+                                <div class="fs-5 text-muted">не вошёл</div>
+                                <a href="{% url 'login' %}">войти</a>
                             {% endif %}
-                        </dd>
-
-                        <dt class="col-sm-3">Админка</dt>
-                        <dd class="col-sm-9">
-                            <a href="/admin/" class="text-decoration-none">/admin/</a>
-                        </dd>
-                    </dl>
+                        </div>
+                    </div>
                 </div>
             </div>
 

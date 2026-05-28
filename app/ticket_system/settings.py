@@ -43,9 +43,18 @@ INSTALLED_APPS = [
     "django.contrib.messages",       # flash-сообщения для пользователя
     "django.contrib.staticfiles",    # обслуживание CSS/JS/изображений в DEBUG-режиме
 
+    # Расширения PostgreSQL: GIN-индексы, ArrayField, и т. п.
+    "django.contrib.postgres",
+
     # Наши приложения.
     "core.apps.CoreConfig",          # бизнес-логика ИС учёта заявок
 ]
+
+
+# Используем кастомную модель пользователя core.Employee
+# вместо стандартной django.contrib.auth.User.
+# Это нужно ОДИН РАЗ задать перед самой первой миграцией.
+AUTH_USER_MODEL = "core.Employee"
 
 
 MIDDLEWARE = [
