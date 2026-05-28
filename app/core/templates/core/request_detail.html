@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+{% load core_tags %}
+
+{% block content %}
+
+    {# ---------- Шапка карточки ---------- #}
+    <div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+        <div>
+            <div class="text-muted small mb-1">
+                <a href="{% url 'core:request_list' %}" class="text-muted text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> Все заявки
+                </a>
+            </div>
+            <h1 class="h3 mb-1">
+                <span class="text-muted">{{ req.number }}</span>
+                <span class="ms-2">{{ req.title }}</span>
+            </h1>
+            <div>
+                <span class="badge bg-{{ req.status|status_color }} fs-6">
+                    <i class="bi {{ req.status|status_icon }}"></i>
+                    {{ req.status.name }}
+                </span>
+                <span class="badge bg-{{ req.priority|priority_color }} text-dark fs-6 ms-1">
+                    {{ req.priority.name }} приоритет
+                </span>
+            </div>
+        </div>
+        {% if can_edit %}
+            <a href="{% url 'core:request_edit' req.number %}" class="btn btn-outline-secondary">
+                <i class="bi bi-pencil"></i> Редактировать
+            </a>
+        {% endif %}
+    </div>
+
+    {# ---------- Кнопки смены статуса ---------- #}
+    {% if transitions %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="text-muted small mb-2">Доступные действия:</div>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for st in transitions %}
+                        <form method="post"
+                              action="{% url 'core:request_transition' req.number st.code %}"
+                              class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-{{ st|status_color }}">
+                                <i class="bi {{ st|status_icon }}"></i>
+                                Перевести в «{{ st.name }}»
+                            </button>
+                        </form>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="row g-4">
+
+        {# ============= ЛЕВАЯ КОЛОНКА ============= #}
+        <div class="col-lg-8">
+
+            {# Описание #}
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h2 class="h6 mb-0">
+                        <i class="bi bi-card-text"></i> Описание
+                    </h2>
+                </div>
+                <div class="card-body">
+                    {% if req.description %}
+                        <div style="white-space: pre-wrap;">{{ req.description }}</div>
+                    {% else %}
+                        <span class="text-muted">Описание не указано.</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# Кастомные поля (low-code) #}
+            {% if custom_fields_view %}
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h2 class="h6 mb-0">
+                            <i class="bi bi-sliders"></i> Дополнительные сведения
+                            <span class="text-muted small">(настраиваемые поля)</span>
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            {% for cf in custom_fields_view %}
+                                <dt class="col-sm-4 text-muted">{{ cf.label }}</dt>
+                                <dd class="col-sm-8">{{ cf.value }}</dd>
+                            {% endfor %}
+                        </dl>
+                    </div>
+                </div>
+            {% endif %}
+
+            {# История статусов #}
+            <div class="card mb-4">
+                <div class="card-header bg-white">
+                    <h2 class="h6 mb-0">
+                        <i class="bi bi-clock-history"></i> История статусов
+                    </h2>
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for h in history %}
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    {% if h.status_from %}
+                                        <span class="badge bg-{{ h.status_from|status_color }}">{{ h.status_from.name }}</span>
+                                        <i class="bi bi-arrow-right text-muted"></i>
+                                    {% endif %}
+                                    <span class="badge bg-{{ h.status_to|status_color }}">{{ h.status_to.name }}</span>
+                                    {% if h.comment %}
+                                        <span class="ms-2 text-muted">— {{ h.comment }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="text-muted small text-nowrap">
+                                    {{ h.changed_by.full_name|default:h.changed_by.username }} ·
+                                    {{ h.changed_at|date:"d.m.Y H:i" }}
+                                </div>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            {# Комментарии #}
+            <div class="card mb-4" id="comments">
+                <div class="card-header bg-white">
+                    <h2 class="h6 mb-0">
+                        <i class="bi bi-chat-left-text"></i>
+                        Комментарии ({{ comments.count }})
+                    </h2>
+                </div>
+                {% if comments %}
+                    <ul class="list-group list-group-flush">
+                        {% for c in comments %}
+                            <li class="list-group-item {% if c.is_internal %}bg-light{% endif %}">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <strong>
+                                        {{ c.author.full_name|default:c.author.username }}
+                                        {% if c.is_internal %}
+                                            <span class="badge bg-warning text-dark ms-1">внутренний</span>
+                                        {% endif %}
+                                    </strong>
+                                    <span class="text-muted small">
+                                        {{ c.created_at|date:"d.m.Y H:i" }}
+                                    </span>
+                                </div>
+                                <div style="white-space: pre-wrap;">{{ c.text }}</div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="card-body text-muted text-center">
+                        <i class="bi bi-chat-square display-6 d-block mb-2"></i>
+                        Комментариев пока нет.
+                    </div>
+                {% endif %}
+
+                {# Форма добавления комментария #}
+                <div class="card-body border-top">
+                    <form method="post" action="{% url 'core:request_add_comment' req.number %}">
+                        {% csrf_token %}
+                        <div class="mb-2">
+                            {{ comment_form.text }}
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="form-check">
+                                {{ comment_form.is_internal }}
+                                <label class="form-check-label small" for="{{ comment_form.is_internal.id_for_label }}">
+                                    Внутренний (не виден клиенту)
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="bi bi-send"></i> Отправить
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+
+        {# ============= ПРАВАЯ КОЛОНКА ============= #}
+        <div class="col-lg-4">
+
+            <div class="card mb-3">
+                <div class="card-header bg-white">
+                    <h2 class="h6 mb-0">
+                        <i class="bi bi-info-circle"></i> Параметры заявки
+                    </h2>
+                </div>
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span class="text-muted">Клиент</span>
+                        <strong class="text-end">{{ req.client.name }}</strong>
+                    </li>
+                    {% if req.client.contact_person %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span class="text-muted">Контактное лицо</span>
+                            <span class="text-end">{{ req.client.contact_person }}</span>
+                        </li>
+                    {% endif %}
+                    {% if req.client.phone %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span class="text-muted">Телефон</span>
+                            <span class="text-end">{{ req.client.phone }}</span>
+                        </li>
+                    {% endif %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span class="text-muted">Услуга</span>
+                        <span class="text-end">{{ req.service.name }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span class="text-muted">Исполнитель</span>
+                        <span class="text-end">
+                            {% if req.assignee %}
+                                {{ req.assignee.full_name|default:req.assignee.username }}
+                            {% else %}
+                                <span class="text-muted">— не назначен —</span>
+                            {% endif %}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span class="text-muted">Кем создана</span>
+                        <span class="text-end">
+                            {{ req.created_by.full_name|default:req.created_by.username }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span class="text-muted">Дата создания</span>
+                        <span class="text-end">{{ req.created_at|date:"d.m.Y H:i" }}</span>
+                    </li>
+                    {% if req.due_date %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span class="text-muted">Срок выполнения</span>
+                            <span class="text-end">{{ req.due_date|date:"d.m.Y H:i" }}</span>
+                        </li>
+                    {% endif %}
+                    {% if req.closed_at %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span class="text-muted">Закрыта</span>
+                            <span class="text-end">{{ req.closed_at|date:"d.m.Y H:i" }}</span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+
+        </div>
+    </div>
+
+{% endblock %}

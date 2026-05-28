@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 class="h3 mb-0">
+                    {% if is_create %}
+                        <i class="bi bi-plus-lg"></i> Новая заявка
+                    {% else %}
+                        <i class="bi bi-pencil"></i> Редактирование {{ req.number }}
+                    {% endif %}
+                </h1>
+                <a href="{% if is_create %}{% url 'core:request_list' %}{% else %}{% url 'core:request_detail' req.number %}{% endif %}"
+                   class="btn btn-outline-secondary">
+                    <i class="bi bi-x-lg"></i> Отмена
+                </a>
+            </div>
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                {# Общие ошибки формы #}
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                {# Основные поля #}
+                <div class="card mb-3">
+                    <div class="card-header bg-white">
+                        <h2 class="h6 mb-0">Основные данные</h2>
+                    </div>
+                    <div class="card-body">
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.client.id_for_label }}" class="form-label">
+                                    {{ form.client.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.client }}
+                                {{ form.client.errors }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.service.id_for_label }}" class="form-label">
+                                    {{ form.service.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.service }}
+                                {{ form.service.errors }}
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="{{ form.priority.id_for_label }}" class="form-label">
+                                    {{ form.priority.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.priority }}
+                                {{ form.priority.errors }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.assignee.id_for_label }}" class="form-label">
+                                    {{ form.assignee.label }}
+                                </label>
+                                {{ form.assignee }}
+                                {{ form.assignee.errors }}
+                            </div>
+
+                            <div class="col-12">
+                                <label for="{{ form.title.id_for_label }}" class="form-label">
+                                    {{ form.title.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.title }}
+                                {{ form.title.errors }}
+                            </div>
+
+                            <div class="col-12">
+                                <label for="{{ form.description.id_for_label }}" class="form-label">
+                                    {{ form.description.label }}
+                                </label>
+                                {{ form.description }}
+                                {{ form.description.errors }}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                {# Дополнительные (low-code) поля — выводим всё, что начинается на cf_ #}
+                {% if form.fields %}
+                    {% with has_custom=False %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-white">
+                            <h2 class="h6 mb-0">
+                                <i class="bi bi-sliders"></i>
+                                Дополнительные сведения
+                                <span class="text-muted small">(low-code конструктор)</span>
+                            </h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                {% for field in form %}
+                                    {% if field.name|slice:":3" == "cf_" %}
+                                        <div class="col-md-6">
+                                            {% if field.field.widget.input_type == "checkbox" %}
+                                                <div class="form-check mt-4">
+                                                    {{ field }}
+                                                    <label class="form-check-label" for="{{ field.id_for_label }}">
+                                                        {{ field.label }}
+                                                    </label>
+                                                </div>
+                                            {% else %}
+                                                <label for="{{ field.id_for_label }}" class="form-label">
+                                                    {{ field.label }}
+                                                    {% if field.field.required %}
+                                                        <span class="text-danger">*</span>
+                                                    {% endif %}
+                                                </label>
+                                                {{ field }}
+                                            {% endif %}
+                                            {{ field.errors }}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <div class="text-muted small mt-3">
+                                Эти поля настраиваются администратором в разделе
+                                «Конструктор полей» — без программирования.
+                            </div>
+                        </div>
+                    </div>
+                    {% endwith %}
+                {% endif %}
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% if is_create %}{% url 'core:request_list' %}{% else %}{% url 'core:request_detail' req.number %}{% endif %}"
+                       class="btn btn-outline-secondary">
+                        Отмена
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check2"></i>
+                        {% if is_create %}Создать заявку{% else %}Сохранить{% endif %}
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+{% endblock %}
