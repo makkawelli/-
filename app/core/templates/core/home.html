@@ -1,92 +1,173 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
 
-            <div class="card shadow-sm mb-4">
-                <div class="card-body p-4">
-                    <h1 class="card-title h3 mb-3">
-                        Информационная система учёта заявок
-                    </h1>
-                    <p class="lead mb-2">
-                        Прототип запущен. Соединение с PostgreSQL установлено.
-                        Структура БД создана.
-                    </p>
-                    <p class="text-muted mb-0">
-                        На текущем шаге доступна работа в админке Django:
-                        <a href="/admin/">/admin/</a>.
-                        Веб-интерфейс для пользователей появится на следующих
-                        шагах разработки.
-                    </p>
-                </div>
+    {# ---------- Приветствие ---------- #}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">
+                Здравствуйте, {{ user.full_name|default:user.username }}!
+            </h1>
+            <div class="text-muted">
+                {% if user.role %}
+                    Ваша роль в системе:
+                    <span class="badge bg-secondary">{{ user.role.name }}</span>
+                {% else %}
+                    Роль не назначена.
+                {% endif %}
             </div>
-
-            <h2 class="h5 mb-3">Текущее наполнение БД</h2>
-            <div class="row g-3 mb-4">
-                <div class="col-md-4 col-sm-6">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <div class="text-muted small">Заявок всего</div>
-                            <div class="display-6">{{ stats.requests_total }}</div>
-                            <div class="text-success small">
-                                открытых: {{ stats.requests_open }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 col-sm-6">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <div class="text-muted small">Клиентов</div>
-                            <div class="display-6">{{ stats.clients_total }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 col-sm-6">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <div class="text-muted small">Услуг</div>
-                            <div class="display-6">{{ stats.services_total }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 col-sm-6">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <div class="text-muted small">Сотрудников</div>
-                            <div class="display-6">{{ stats.employees_total }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 col-sm-6">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <div class="text-muted small">Кастомных полей</div>
-                            <div class="display-6">{{ stats.field_defs_total }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 col-sm-6">
-                    <div class="card h-100 bg-light">
-                        <div class="card-body">
-                            <div class="text-muted small">Текущий пользователь</div>
-                            {% if user.is_authenticated %}
-                                <div class="fs-5">
-                                    {{ user.get_full_name|default:user.username }}
-                                </div>
-                                <div class="text-muted small">
-                                    {{ user.email|default:"без email" }}
-                                </div>
-                            {% else %}
-                                <div class="fs-5 text-muted">не вошёл</div>
-                                <a href="{% url 'login' %}">войти</a>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+        </div>
+        <div class="text-muted small">
+            {% now "l, d E Y, H:i" %}
         </div>
     </div>
+
+    {# ---------- Общая статистика ---------- #}
+    <h2 class="h5 mb-3">Сводка по системе</h2>
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-4 col-sm-6">
+            <div class="card border-primary h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Заявок всего</div>
+                    <div class="display-6 text-primary">{{ overall.requests_total }}</div>
+                    <div class="small">
+                        <span class="text-success">открытых: {{ overall.requests_open }}</span>
+                        &middot;
+                        <span class="text-muted">закрытых: {{ overall.requests_closed }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-sm-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Клиентов</div>
+                    <div class="display-6">{{ overall.clients_total }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-sm-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Активных услуг</div>
+                    <div class="display-6">{{ overall.services_total }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-sm-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Сотрудников</div>
+                    <div class="display-6">{{ overall.employees_total }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-sm-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted small">
+                        <i class="bi bi-sliders"></i>
+                        Кастомных полей (low-code)
+                    </div>
+                    <div class="display-6">{{ overall.field_defs_total }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 col-sm-6">
+            <div class="card border-warning h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Заявок на мне</div>
+                    <div class="display-6 text-warning">{{ my_requests_total }}</div>
+                    <div class="small text-muted">в работе или ожидают</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="row g-4">
+
+        {# ---------- Распределение по статусам ---------- #}
+        <div class="col-lg-6">
+            <h2 class="h5 mb-3">Распределение по статусам</h2>
+            <div class="card">
+                <div class="card-body p-0">
+                    <table class="table table-hover m-0">
+                        <thead>
+                            <tr class="text-muted small">
+                                <th class="ps-3">Статус</th>
+                                <th class="text-end pe-3">Заявок</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for st in status_distribution %}
+                                <tr>
+                                    <td class="ps-3">
+                                        {% if st.is_terminal %}
+                                            <i class="bi bi-check-circle text-muted"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle text-primary"></i>
+                                        {% endif %}
+                                        {{ st.name }}
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <span class="badge bg-light text-dark">{{ st.cnt }}</span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {# ---------- Мои текущие заявки ---------- #}
+        <div class="col-lg-6">
+            <h2 class="h5 mb-3">Мои текущие заявки</h2>
+            <div class="card">
+                <div class="card-body p-0">
+                    {% if my_requests %}
+                        <table class="table table-hover m-0">
+                            <thead>
+                                <tr class="text-muted small">
+                                    <th class="ps-3">№</th>
+                                    <th>Тема</th>
+                                    <th>Клиент</th>
+                                    <th>Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for r in my_requests %}
+                                    <tr>
+                                        <td class="ps-3 small text-muted">{{ r.number }}</td>
+                                        <td>{{ r.title|truncatechars:35 }}</td>
+                                        <td class="small">{{ r.client.name|truncatechars:20 }}</td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ r.status.name }}</span>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="p-4 text-center text-muted">
+                            <i class="bi bi-inbox display-6 d-block"></i>
+                            На вас сейчас не назначено активных заявок.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="text-muted small mt-2">
+                Полный список заявок появится на следующем шаге разработки.
+            </div>
+        </div>
+
+    </div>
+
 {% endblock %}

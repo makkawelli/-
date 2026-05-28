@@ -1,0 +1,98 @@
+{# Шаблон страницы входа.                                                #}
+{# Django по умолчанию ищет registration/login.html — этого имени менять #}
+{# нельзя, иначе встроенный LoginView не найдёт шаблон.                  #}
+{% extends "base.html" %}
+
+{% block title %}Вход{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5 col-lg-4">
+
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-body p-4">
+
+                <h1 class="h4 text-center mb-4">Вход в систему</h1>
+
+                {# Если был передан параметр ?next=... — например, пользователь #}
+                {# попытался открыть защищённую страницу до входа — выведем     #}
+                {# подсказку и сохраним этот URL в скрытом поле.                #}
+                {% if next %}
+                    <div class="alert alert-warning small">
+                        Для доступа к этой странице нужно войти.
+                    </div>
+                {% endif %}
+
+                {# Если форма не прошла валидацию — Django подложит ошибки.    #}
+                {% if form.errors %}
+                    <div class="alert alert-danger small">
+                        Неверный логин или пароль. Проверьте раскладку клавиатуры.
+                    </div>
+                {% endif %}
+
+                <form method="post" action="{% url 'login' %}" novalidate>
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">
+                            {{ form.username.label }}
+                        </label>
+                        <input
+                            type="text"
+                            name="{{ form.username.name }}"
+                            id="{{ form.username.id_for_label }}"
+                            class="form-control{% if form.username.errors %} is-invalid{% endif %}"
+                            autofocus required
+                            value="{{ form.username.value|default:'' }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.password.id_for_label }}" class="form-label">
+                            {{ form.password.label }}
+                        </label>
+                        <input
+                            type="password"
+                            name="{{ form.password.name }}"
+                            id="{{ form.password.id_for_label }}"
+                            class="form-control{% if form.password.errors %} is-invalid{% endif %}"
+                            required>
+                    </div>
+
+                    {# Сохраняем next, чтобы после входа вернуться на исходную страницу. #}
+                    <input type="hidden" name="next" value="{{ next }}">
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        Войти
+                    </button>
+                </form>
+
+            </div>
+        </div>
+
+        {# Подсказка с тестовыми учётками — только в режиме разработки. #}
+        {% if debug %}
+            <div class="card bg-light border-0 mt-3">
+                <div class="card-body p-3 small">
+                    <div class="text-muted mb-2">
+                        <strong>Тестовые учётные записи</strong>
+                        (пароль у всех — <code>demo1234</code>):
+                    </div>
+                    <div class="row g-1">
+                        <div class="col-6"><code>admin</code></div>
+                        <div class="col-6 text-muted">суперпользователь</div>
+                        <div class="col-6"><code>manager</code></div>
+                        <div class="col-6 text-muted">менеджер</div>
+                        <div class="col-6"><code>operator</code></div>
+                        <div class="col-6 text-muted">оператор</div>
+                        <div class="col-6"><code>executor1</code></div>
+                        <div class="col-6 text-muted">исполнитель</div>
+                        <div class="col-6"><code>executor2</code></div>
+                        <div class="col-6 text-muted">исполнитель</div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
