@@ -246,6 +246,7 @@ def request_edit(request, number: str):
     if request.method == "POST":
         form = forms.RequestForm(request.POST, instance=req)
         if form.is_valid():
+            old_assignee_id = req.assignee_id
             obj = form.save(commit=False)
             obj.custom_fields = form.get_custom_fields_payload()
             obj.save()
@@ -257,6 +258,16 @@ def request_edit(request, number: str):
                 entity_id=obj.id,
                 payload={"number": obj.number},
             )
+
+            # Если назначили нового исполнителя (или сменили) — уведомим его.
+            if obj.assignee_id and obj.assignee_id != old_assignee_id:
+                # Перечитываем объект, чтобы select_related подхватил assignee.
+                fresh = models.Request.objects.select_related(
+                    "client", "service", "priority", "status", "assignee"
+                ).get(pk=obj.pk)
+                from . import notifications as _notifications
+                _notifications.notify_request_assigned(fresh)
+
             messages.success(request, "Заявка сохранена.")
             return redirect("core:request_detail", number=obj.number)
     else:

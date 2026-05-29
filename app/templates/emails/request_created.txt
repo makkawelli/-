@@ -1,0 +1,16 @@
+Здравствуйте{% if client.contact_person %}, {{ client.contact_person }}{% endif %}!
+
+Ваша заявка зарегистрирована в системе.
+
+Номер:        {{ request.number }}
+Тема:         {{ request.title }}
+Услуга:       {{ request.service.name }}
+Приоритет:    {{ request.priority.name }}
+Статус:       {{ request.status.name }}
+Срок:         {{ request.due_date|date:"d.m.Y H:i" }}
+
+Открыть заявку: {{ url }}
+
+—
+ИС «Учёт заявок»
+Это автоматическое сообщение, отвечать на него не нужно.

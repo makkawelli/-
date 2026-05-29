@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>Заявка {{ request.number }} — назначение</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+             color: #212529; max-width: 560px; margin: 0 auto; padding: 24px;">
+
+    <h2 style="color: #fd7e14; margin-top: 0;">
+        Вам назначена заявка {{ request.number }}
+    </h2>
+
+    <p>Здравствуйте, {{ assignee.full_name|default:assignee.username }}!</p>
+
+    <table cellpadding="6" style="border-collapse: collapse; width: 100%;
+                                  border: 1px solid #dee2e6; margin: 16px 0;">
+        <tr><td style="color: #6c757d; width: 35%;">Номер</td>
+            <td><strong>{{ request.number }}</strong></td></tr>
+        <tr><td style="color: #6c757d;">Тема</td>
+            <td>{{ request.title }}</td></tr>
+        <tr><td style="color: #6c757d;">Клиент</td>
+            <td>{{ request.client.name }}</td></tr>
+        <tr><td style="color: #6c757d;">Услуга</td>
+            <td>{{ request.service.name }}</td></tr>
+        <tr><td style="color: #6c757d;">Приоритет</td>
+            <td><strong>{{ request.priority.name }}</strong></td></tr>
+        <tr><td style="color: #6c757d;">Срок</td>
+            <td>{{ request.due_date|date:"d.m.Y H:i" }}</td></tr>
+    </table>
+
+    <p style="text-align: center; margin: 24px 0;">
+        <a href="{{ url }}"
+           style="display: inline-block; background: #fd7e14; color: white;
+                  padding: 10px 24px; text-decoration: none; border-radius: 6px;">
+            Открыть заявку
+        </a>
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #dee2e6; margin: 24px 0;">
+    <p style="color: #6c757d; font-size: 13px;">
+        ИС «Учёт заявок»
+    </p>
+</body>
+</html>

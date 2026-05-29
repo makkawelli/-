@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <title>Заявка {{ request.number }} — смена статуса</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+             color: #212529; max-width: 560px; margin: 0 auto; padding: 24px;">
+
+    <h2 style="color: #198754; margin-top: 0;">
+        Статус заявки {{ request.number }} изменён
+    </h2>
+
+    <p>Здравствуйте{% if client.contact_person %}, {{ client.contact_person }}{% endif %}!</p>
+
+    <p style="font-size: 18px; text-align: center; margin: 24px 0;
+              padding: 16px; background: #f8f9fa; border-radius: 6px;">
+        <span style="color: #6c757d;">{{ old_status.name }}</span>
+        &nbsp;→&nbsp;
+        <strong>{{ new_status.name }}</strong>
+    </p>
+
+    <p><strong>Тема заявки:</strong> {{ request.title }}</p>
+
+    <p style="text-align: center; margin: 24px 0;">
+        <a href="{{ url }}"
+           style="display: inline-block; background: #198754; color: white;
+                  padding: 10px 24px; text-decoration: none; border-radius: 6px;">
+            Открыть заявку
+        </a>
+    </p>
+
+    <hr style="border: 0; border-top: 1px solid #dee2e6; margin: 24px 0;">
+    <p style="color: #6c757d; font-size: 13px;">
+        ИС «Учёт заявок» &middot; автоматическое сообщение,
+        отвечать на него не нужно.
+    </p>
+</body>
+</html>

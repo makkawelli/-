@@ -1,0 +1,15 @@
+Здравствуйте, {{ assignee.full_name|default:assignee.username }}!
+
+Вам назначена заявка:
+
+Номер:        {{ request.number }}
+Тема:         {{ request.title }}
+Клиент:       {{ request.client.name }}
+Услуга:       {{ request.service.name }}
+Приоритет:    {{ request.priority.name }}
+Срок:         {{ request.due_date|date:"d.m.Y H:i" }}
+
+Открыть заявку: {{ url }}
+
+—
+ИС «Учёт заявок»

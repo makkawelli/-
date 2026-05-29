@@ -152,6 +152,10 @@ MEDIA_ROOT = BASE_DIR / "media"
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = "noreply@ticket-system.local"
 
+# Базовый URL сайта — используется в email-уведомлениях для построения
+# абсолютных ссылок. На production переопределить через .env.
+SITE_URL = env("SITE_URL", "http://127.0.0.1:8000")
+
 
 # ============================================================================
 # ПРОЧЕЕ

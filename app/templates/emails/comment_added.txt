@@ -1,0 +1,11 @@
+Здравствуйте{% if client.contact_person %}, {{ client.contact_person }}{% endif %}!
+
+По вашей заявке {{ request.number }} «{{ request.title }}»
+получен новый комментарий от {{ comment.author.full_name|default:comment.author.username }}:
+
+{{ comment.text }}
+
+Открыть заявку и ответить: {{ url }}
+
+—
+ИС «Учёт заявок»

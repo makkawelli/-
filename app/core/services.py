@@ -12,7 +12,7 @@ from datetime import timedelta
 from django.db import transaction
 from django.utils import timezone
 
-from . import models
+from . import models, notifications
 
 
 # =============================================================================
@@ -82,6 +82,12 @@ def create_request(*, client, service, priority, title, description,
         entity_id=req.id,
         payload={"number": req.number, "title": req.title},
     )
+
+    # Уведомления (отправляются после COMMIT, чтобы не уйти впустую при rollback).
+    transaction.on_commit(lambda: notifications.notify_request_created(req))
+    if req.assignee:
+        transaction.on_commit(lambda: notifications.notify_request_assigned(req))
+
     return req
 
 
@@ -121,6 +127,12 @@ def transition_request(*, request_obj, to_status_code: str, changed_by,
             "to": new_status.code,
         },
     )
+
+    # Уведомление клиенту о смене статуса.
+    transaction.on_commit(
+        lambda: notifications.notify_status_changed(request_obj, old_status, new_status)
+    )
+
     return request_obj
 
 
@@ -140,4 +152,9 @@ def add_comment(*, request_obj, author, text: str, is_internal: bool = False):
         entity_id=request_obj.id,
         payload={"number": request_obj.number, "comment_id": comment.id},
     )
+
+    # Уведомление клиенту (только для публичных комментариев — внутренние
+    # отсекаются в notify_comment_added).
+    transaction.on_commit(lambda: notifications.notify_comment_added(comment))
+
     return comment
