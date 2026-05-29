@@ -4,143 +4,385 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}{{ page_title|default:"ИС «Учёт заявок»" }}{% endblock %} — ИС «Учёт заявок»</title>
+    <title>{% block title %}{{ page_title|default:"ИС «Учёт заявок»" }}{% endblock %} — ServiceDesk</title>
 
-    {# Bootstrap 5 через CDN — не требует локальной установки #}
+    {# Bootstrap 5 + Bootstrap Icons #}
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    {# Шрифт Inter — современный, отличается от дефолтного Bootstrap #}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+          rel="stylesheet">
 
     <style>
-        /* Строка таблицы, по которой можно кликнуть для перехода:
-           курсор-палец, чтобы пользователь видел интерактивность. */
+        :root {
+            /* Основная палитра */
+            --sd-sidebar-bg: #1e293b;       /* slate-800 */
+            --sd-sidebar-hover: #334155;    /* slate-700 */
+            --sd-sidebar-active: #0f172a;   /* slate-900 */
+            --sd-sidebar-text: #cbd5e1;     /* slate-300 */
+            --sd-sidebar-text-active: #ffffff;
+            --sd-accent: #0d9488;           /* teal-600 */
+            --sd-accent-hover: #0f766e;     /* teal-700 */
+            --sd-accent-light: #ccfbf1;     /* teal-100 */
+            --sd-body-bg: #f8fafc;          /* slate-50 */
+            --sd-card-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+            --sd-card-radius: 12px;
+            --sd-sidebar-width: 260px;
+        }
+
+        * { font-family: 'Inter', -apple-system, sans-serif; }
+
+        body {
+            background: var(--sd-body-bg);
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sd-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: var(--sd-sidebar-width);
+            background: var(--sd-sidebar-bg);
+            display: flex;
+            flex-direction: column;
+            z-index: 1040;
+            transition: transform .25s ease;
+        }
+        .sd-sidebar__brand {
+            padding: 1.25rem 1.25rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            text-decoration: none;
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.05rem;
+            border-bottom: 1px solid rgba(255,255,255,.08);
+        }
+        .sd-sidebar__brand i {
+            font-size: 1.4rem;
+            color: var(--sd-accent);
+        }
+        .sd-sidebar__nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: .75rem .6rem;
+        }
+        .sd-sidebar__section {
+            font-size: .65rem;
+            font-weight: 600;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,.35);
+            padding: 1rem .75rem .35rem;
+        }
+        .sd-nav-link {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            padding: .55rem .75rem;
+            border-radius: 8px;
+            color: var(--sd-sidebar-text);
+            text-decoration: none;
+            font-size: .875rem;
+            font-weight: 500;
+            transition: background .15s, color .15s;
+        }
+        .sd-nav-link:hover {
+            background: var(--sd-sidebar-hover);
+            color: #fff;
+        }
+        .sd-nav-link.active {
+            background: var(--sd-accent);
+            color: #fff;
+        }
+        .sd-nav-link i {
+            font-size: 1.1rem;
+            width: 1.25rem;
+            text-align: center;
+        }
+
+        /* Профиль внизу сайдбара */
+        .sd-sidebar__footer {
+            border-top: 1px solid rgba(255,255,255,.08);
+            padding: .75rem 1rem;
+        }
+        .sd-user-block {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            color: var(--sd-sidebar-text);
+            font-size: .8rem;
+        }
+        .sd-user-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--sd-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 600;
+            font-size: .8rem;
+        }
+        .sd-user-name {
+            font-weight: 600;
+            color: #fff;
+            font-size: .82rem;
+        }
+        .sd-user-role {
+            font-size: .7rem;
+            color: var(--sd-sidebar-text);
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .sd-main {
+            margin-left: var(--sd-sidebar-width);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Topbar (мини-шапка с breadcrumb и быстрыми действиями) */
+        .sd-topbar {
+            background: #fff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: .6rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+        }
+        .sd-topbar__left {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+        .sd-topbar__right {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+        }
+
+        .sd-content {
+            flex: 1;
+            padding: 1.5rem;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* Переопределения для карточек Bootstrap */
+        .card {
+            border: none;
+            border-radius: var(--sd-card-radius);
+            box-shadow: var(--sd-card-shadow);
+        }
+        .card-header {
+            border-radius: var(--sd-card-radius) var(--sd-card-radius) 0 0 !important;
+        }
+
+        /* Кнопки с accent-цветом */
+        .btn-primary {
+            background: var(--sd-accent);
+            border-color: var(--sd-accent);
+        }
+        .btn-primary:hover, .btn-primary:focus {
+            background: var(--sd-accent-hover);
+            border-color: var(--sd-accent-hover);
+        }
+        .btn-outline-primary {
+            color: var(--sd-accent);
+            border-color: var(--sd-accent);
+        }
+        .btn-outline-primary:hover {
+            background: var(--sd-accent);
+            border-color: var(--sd-accent);
+            color: #fff;
+        }
+        .bg-primary { background-color: var(--sd-accent) !important; }
+        a { color: var(--sd-accent); }
+        a:hover { color: var(--sd-accent-hover); }
+
         .clickable-row { cursor: pointer; }
+
+        /* Badge с border-primary */
+        .border-primary { border-color: var(--sd-accent) !important; }
+        .text-primary { color: var(--sd-accent) !important; }
+
+        /* ===== MOBILE ===== */
+        .sd-sidebar-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            color: var(--sd-sidebar-bg);
+            padding: .25rem .5rem;
+        }
+        .sd-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.4);
+            z-index: 1039;
+        }
+
+        @media (max-width: 991.98px) {
+            .sd-sidebar {
+                transform: translateX(-100%);
+            }
+            .sd-sidebar.open {
+                transform: translateX(0);
+            }
+            .sd-overlay.open {
+                display: block;
+            }
+            .sd-main {
+                margin-left: 0;
+            }
+            .sd-sidebar-toggle {
+                display: inline-flex;
+            }
+        }
+
+        /* Footer */
+        .sd-footer {
+            padding: 1rem 1.5rem;
+            text-align: center;
+            color: #94a3b8;
+            font-size: .75rem;
+            border-top: 1px solid #e2e8f0;
+            margin-top: auto;
+        }
     </style>
 
     {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-light d-flex flex-column min-vh-100">
+<body>
 
-    {# ---------------- ШАПКА ---------------- #}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'core:home' %}">
-                <i class="bi bi-clipboard-check me-1"></i>
-                ИС «Учёт заявок»
+{# ===== OVERLAY для мобильного ===== #}
+<div class="sd-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+{# ===== SIDEBAR ===== #}
+{% if user.is_authenticated %}
+<aside class="sd-sidebar" id="sidebar">
+    {# Логотип #}
+    <a href="{% url 'core:home' %}" class="sd-sidebar__brand">
+        <i class="bi bi-clipboard-check"></i>
+        <span>ServiceDesk</span>
+    </a>
+
+    {# Навигация #}
+    <nav class="sd-sidebar__nav">
+        <div class="sd-sidebar__section">Основное</div>
+
+        <a href="{% url 'core:home' %}"
+           class="sd-nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+            <i class="bi bi-grid-1x2"></i> Дашборд
+        </a>
+
+        <a href="{% url 'core:request_list' %}"
+           class="sd-nav-link {% if request.resolver_match.url_name == 'request_list' or request.resolver_match.url_name == 'request_detail' or request.resolver_match.url_name == 'request_create' or request.resolver_match.url_name == 'request_edit' %}active{% endif %}">
+            <i class="bi bi-ticket-detailed"></i> Заявки
+        </a>
+
+        <a href="{% url 'core:client_list' %}"
+           class="sd-nav-link {% if request.resolver_match.url_name == 'client_list' or request.resolver_match.url_name == 'client_detail' or request.resolver_match.url_name == 'client_create' or request.resolver_match.url_name == 'client_edit' %}active{% endif %}">
+            <i class="bi bi-people"></i> Клиенты
+        </a>
+
+        {% if user.is_superuser or user.role and user.role.code == "manager" %}
+            <div class="sd-sidebar__section">Аналитика</div>
+
+            <a href="{% url 'core:reports_index' %}"
+               class="sd-nav-link {% if request.resolver_match.url_name == 'reports_index' or request.resolver_match.url_name == 'report_period' or request.resolver_match.url_name == 'report_executors' or request.resolver_match.url_name == 'report_sla' %}active{% endif %}">
+                <i class="bi bi-bar-chart-line"></i> Отчёты
             </a>
 
-            {# Кнопка-гамбургер для мобильных #}
-            <button class="navbar-toggler" type="button"
-                    data-bs-toggle="collapse" data-bs-target="#navMain">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            <a href="{% url 'core:audit_log' %}"
+               class="sd-nav-link {% if request.resolver_match.url_name == 'audit_log' %}active{% endif %}">
+                <i class="bi bi-clock-history"></i> Журнал
+            </a>
+        {% endif %}
 
-            <div class="collapse navbar-collapse" id="navMain">
+        {% if user.is_superuser %}
+            <div class="sd-sidebar__section">Система</div>
 
-                {# Основное меню навигации (только для авторизованных) #}
-                {% if user.is_authenticated %}
-                    <ul class="navbar-nav me-auto">
-                        <li class="nav-item">
-                            <a class="nav-link{% if request.resolver_match.url_name == 'home' %} active{% endif %}"
-                               href="{% url 'core:home' %}">
-                                <i class="bi bi-house"></i> Главная
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link{% if request.resolver_match.url_name == 'request_list' or request.resolver_match.url_name == 'request_detail' or request.resolver_match.url_name == 'request_create' or request.resolver_match.url_name == 'request_edit' %} active{% endif %}"
-                               href="{% url 'core:request_list' %}">
-                                <i class="bi bi-list-ul"></i> Заявки
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link{% if request.resolver_match.url_name == 'client_list' or request.resolver_match.url_name == 'client_detail' or request.resolver_match.url_name == 'client_create' or request.resolver_match.url_name == 'client_edit' %} active{% endif %}"
-                               href="{% url 'core:client_list' %}">
-                                <i class="bi bi-people"></i> Клиенты
-                            </a>
-                        </li>
-                        {% if user.is_superuser or user.role and user.role.code == "manager" %}
-                            <li class="nav-item">
-                                <a class="nav-link{% if request.resolver_match.url_name == 'reports_index' or request.resolver_match.url_name == 'report_period' or request.resolver_match.url_name == 'report_executors' or request.resolver_match.url_name == 'report_sla' %} active{% endif %}"
-                                   href="{% url 'core:reports_index' %}">
-                                    <i class="bi bi-bar-chart"></i> Отчёты
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link{% if request.resolver_match.url_name == 'audit_log' %} active{% endif %}"
-                                   href="{% url 'core:audit_log' %}">
-                                    <i class="bi bi-clock-history"></i> Журнал
-                                </a>
-                            </li>
-                        {% endif %}
-                        {% if user.is_superuser %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="/admin/" target="_blank">
-                                    <i class="bi bi-tools"></i> Админка
-                                </a>
-                            </li>
-                        {% endif %}
-                    </ul>
-                {% endif %}
-
-                {# Правая часть шапки: профиль / войти #}
-                <ul class="navbar-nav ms-auto">
-                    {% if user.is_authenticated %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button"
-                               data-bs-toggle="dropdown">
-                                <i class="bi bi-person-circle"></i>
-                                {{ user.full_name|default:user.username }}
-                                {% if user.role %}
-                                    <span class="badge bg-light text-dark ms-1">
-                                        {{ user.role.name }}
-                                    </span>
-                                {% endif %}
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    <span class="dropdown-item-text small text-muted">
-                                        {{ user.email|default:"без email" }}
-                                    </span>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'password_change' %}">
-                                        <i class="bi bi-key"></i> Сменить пароль
-                                    </a>
-                                </li>
-                                <li>
-                                    {# В Django 5 logout требует POST. Делаем форму, #}
-                                    {# стилизованную под пункт меню.                #}
-                                    <form method="post" action="{% url 'logout' %}" class="m-0">
-                                        {% csrf_token %}
-                                        <button type="submit" class="dropdown-item">
-                                            <i class="bi bi-box-arrow-right"></i> Выйти
-                                        </button>
-                                    </form>
-                                </li>
-                            </ul>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="btn btn-light btn-sm" href="{% url 'login' %}">
-                                <i class="bi bi-box-arrow-in-right"></i> Войти
-                            </a>
-                        </li>
-                    {% endif %}
-                </ul>
-
-            </div>
-        </div>
+            <a href="/admin/" target="_blank" class="sd-nav-link">
+                <i class="bi bi-gear"></i> Админ-панель
+            </a>
+        {% endif %}
     </nav>
 
-    {# ---------------- ОСНОВНОЙ КОНТЕНТ ---------------- #}
-    <main class="container flex-grow-1">
+    {# Профиль внизу #}
+    <div class="sd-sidebar__footer">
+        <div class="sd-user-block">
+            <div class="sd-user-avatar">
+                {{ user.full_name|default:user.username|make_list|first|upper }}
+            </div>
+            <div>
+                <div class="sd-user-name">{{ user.full_name|default:user.username }}</div>
+                <div class="sd-user-role">
+                    {% if user.role %}{{ user.role.name }}{% else %}—{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="mt-2 d-flex gap-2">
+            <a href="{% url 'password_change' %}" class="btn btn-sm btn-outline-light" title="Сменить пароль">
+                <i class="bi bi-key"></i>
+            </a>
+            <form method="post" action="{% url 'logout' %}" class="m-0">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-light" title="Выйти">
+                    <i class="bi bi-box-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</aside>
+{% endif %}
 
-        {# Flash-сообщения от Django (например, "пароль изменён") #}
+{# ===== MAIN ===== #}
+<div class="sd-main">
+
+    {# Topbar #}
+    <header class="sd-topbar">
+        <div class="sd-topbar__left">
+            <button class="sd-sidebar-toggle" onclick="toggleSidebar()" aria-label="Меню">
+                <i class="bi bi-list"></i>
+            </button>
+            <span class="fw-semibold text-dark" style="font-size:.9rem;">
+                {% block topbar_title %}{{ page_title|default:"" }}{% endblock %}
+            </span>
+        </div>
+        <div class="sd-topbar__right">
+            {% if user.is_authenticated %}
+                <span class="text-muted" style="font-size:.75rem;">{% now "l, d E Y" %}</span>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-box-arrow-in-right"></i> Войти
+                </a>
+            {% endif %}
+        </div>
+    </header>
+
+    {# Контент #}
+    <div class="sd-content">
+        {# Flash-сообщения #}
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show"
+                     role="alert" style="border-radius: 10px;">
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
@@ -148,16 +390,21 @@
         {% endif %}
 
         {% block content %}{% endblock %}
-    </main>
+    </div>
 
-    {# ---------------- ПОДВАЛ ---------------- #}
-    <footer class="container my-4 text-center text-muted small">
-        <hr>
-        Информационная система учёта заявок на обслуживание клиентов &middot;
-        ВКР, 2026 г.
+    {# Footer #}
+    <footer class="sd-footer">
+        Информационная система учёта заявок на обслуживание клиентов &middot; ВКР, 2026
     </footer>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    {% block extra_scripts %}{% endblock %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('sidebarOverlay').classList.toggle('open');
+    }
+</script>
+{% block extra_scripts %}{% endblock %}
 </body>
 </html>
