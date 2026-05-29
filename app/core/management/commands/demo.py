@@ -31,6 +31,13 @@ DEMO_PASSWORD = "demo1234"
 # =============================================================================
 # Описание тестовых пользователей
 # =============================================================================
+# is_staff намеренно False у всех:
+# Django Admin использует свою систему прав (auth.Permission), которые
+# мы не настраиваем — менеджер/оператор/исполнитель пользуются нашим
+# собственным UI. Включение is_staff без настройки прав давало лишь
+# пустую админ-панель и путало пользователя.
+# Полноценный доступ к админке — только у суперпользователя (admin,
+# создаётся отдельно через python manage.py createsuperuser).
 EMPLOYEES = [
     {
         "username": "manager",
@@ -38,7 +45,7 @@ EMPLOYEES = [
         "position": "Руководитель сервиса",
         "email": "manager@ticket-system.local",
         "role_code": "manager",
-        "is_staff": True,
+        "is_staff": False,
     },
     {
         "username": "operator",
@@ -46,7 +53,7 @@ EMPLOYEES = [
         "position": "Диспетчер",
         "email": "operator@ticket-system.local",
         "role_code": "operator",
-        "is_staff": True,
+        "is_staff": False,
     },
     {
         "username": "executor1",
@@ -352,7 +359,20 @@ class Command(BaseCommand):
                 employee.save()
                 self.stdout.write(f"  + {employee.username} ({role})")
             else:
-                self.stdout.write(f"  - {employee.username} уже существует, пропускаю")
+                # Обновляем поля для существующих пользователей — на случай,
+                # если семантика is_staff/role изменилась между запусками demo.
+                changed = False
+                if employee.role_id != role.id:
+                    employee.role = role
+                    changed = True
+                if employee.is_staff != spec["is_staff"]:
+                    employee.is_staff = spec["is_staff"]
+                    changed = True
+                if changed:
+                    employee.save(update_fields=["role", "is_staff"])
+                    self.stdout.write(f"  ~ {employee.username} обновлён (role/is_staff)")
+                else:
+                    self.stdout.write(f"  - {employee.username} уже существует, пропускаю")
             result[spec["username"]] = employee
         return result
 
