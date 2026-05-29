@@ -22,25 +22,44 @@ from . import forms, models, permissions, reports, services
 def home(request):
     """Главная страница / дашборд.
 
-    Защищено @login_required — неавторизованный будет переадресован на login.
-    Содержит общие счётчики, распределение по статусам и блок «мои заявки».
+    Сводка считается по тем заявкам, которые видит текущий пользователь
+    (visible_requests_qs). Для исполнителя — это только его назначенные
+    заявки; для менеджера/оператора/админа — все. Это согласует цифры
+    в сводке с тем, что пользователь увидит при клике для перехода в
+    отфильтрованный список.
     """
-    requests_qs = models.Request.objects.all()
+    # Видимые для пользователя заявки — единый источник для всех счётчиков
+    # на этой странице.
+    visible_qs = permissions.visible_requests_qs(request.user)
+
     overall = {
-        "requests_total":   requests_qs.count(),
-        "requests_open":    requests_qs.filter(status__is_terminal=False).count(),
-        "requests_closed":  requests_qs.filter(status__is_terminal=True).count(),
+        # Заявки — фильтруем по видимости.
+        "requests_total":   visible_qs.count(),
+        "requests_open":    visible_qs.filter(status__is_terminal=False).count(),
+        "requests_closed":  visible_qs.filter(status__is_terminal=True).count(),
+        # Справочные показатели — глобальные, одинаковые для всех ролей.
         "clients_total":    models.Client.objects.count(),
         "services_total":   models.Service.objects.filter(is_active=True).count(),
         "employees_total":  models.Employee.objects.filter(is_active=True).count(),
         "field_defs_total": models.FieldDefinition.objects.filter(is_active=True).count(),
     }
 
-    status_distribution = (
-        models.Status.objects
-        .annotate(cnt=Count("requests"))
-        .order_by("order_num")
-    )
+    # Распределение по статусам — тоже из visible_qs. Включаем все статусы
+    # справочника (даже с нулём заявок), чтобы пользователь видел полный
+    # жизненный цикл заявки, а не только статусы с данными.
+    counts_by_status = {
+        row["status_id"]: row["cnt"]
+        for row in visible_qs.values("status_id").annotate(cnt=Count("id"))
+    }
+    status_distribution = [
+        {
+            "id":          s.id,
+            "name":        s.name,
+            "is_terminal": s.is_terminal,
+            "cnt":         counts_by_status.get(s.id, 0),
+        }
+        for s in models.Status.objects.order_by("order_num")
+    ]
 
     my_requests = (
         models.Request.objects

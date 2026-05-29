@@ -28,7 +28,12 @@
     </div>
 
     {# ---------- Общая статистика ---------- #}
-    <h2 class="h5 mb-3">Сводка по системе</h2>
+    <h2 class="h5 mb-3">
+        Сводка по системе
+        {% if user.role and user.role.code == "executor" %}
+            <small class="text-muted fw-normal">— по вашим заявкам</small>
+        {% endif %}
+    </h2>
     <div class="row g-3 mb-4">
 
         <div class="col-md-4 col-sm-6">
