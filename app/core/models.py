@@ -6,9 +6,17 @@
 Все модели имеют русские verbose_name — это нужно, чтобы админка
 Django отображала названия таблиц и полей по-русски.
 """
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
-from django.contrib.postgres.indexes import GinIndex
 from django.db import models
+
+# GIN-индекс — фича PostgreSQL. На SQLite (используется в тестах) его нет,
+# поэтому добавляем индекс к Request.Meta.indexes только если активный
+# движок БД — PostgreSQL. Это позволяет крутить тесты на SQLite без
+# отдельных миграций для тестовой БД.
+_USING_POSTGRES = "postgresql" in settings.DATABASES["default"]["ENGINE"]
+if _USING_POSTGRES:
+    from django.contrib.postgres.indexes import GinIndex
 
 
 # =============================================================================
@@ -226,11 +234,13 @@ class Request(models.Model):
         verbose_name = "Заявка"
         verbose_name_plural = "Заявки"
         ordering = ["-created_at"]
-        indexes = [
-            # GIN-индекс по custom_fields для быстрых
-            # фильтров по low-code полям без миграций.
-            GinIndex(fields=["custom_fields"], name="idx_request_custom_gin"),
-        ]
+        # GIN-индекс по custom_fields добавляется только под PostgreSQL
+        # (см. _USING_POSTGRES в начале файла). Это нужно, чтобы фильтры
+        # по low-code-полям были быстрыми без отдельных миграций.
+        indexes = (
+            [GinIndex(fields=["custom_fields"], name="idx_request_custom_gin")]
+            if _USING_POSTGRES else []
+        )
 
     def __str__(self) -> str:
         return f"{self.number} - {self.title}"
