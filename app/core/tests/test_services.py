@@ -61,7 +61,7 @@ class TestCreateRequest:
         assert log.payload["number"] == req.number
 
     def test_due_date_uses_priority_sla(
-        self, db, client_record, service, priorities, operator_user,
+        self, db, client_record, service, priorities, operator_user, statuses,
     ):
         """Срок выполнения = created_at + priority.sla_hours."""
         before = timezone.now()
