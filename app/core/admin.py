@@ -56,9 +56,11 @@ class TeamAdmin(admin.ModelAdmin):
 class EmployeeAdmin(UserAdmin):
     """Админка сотрудника: расширяем стандартную UserAdmin своими полями."""
 
-    # В список добавляем full_name, position, role
-    list_display = ("username", "full_name", "email", "position", "role", "is_staff", "is_active")
-    list_filter = ("role", "is_staff", "is_superuser", "is_active", "teams")
+    # В список добавляем full_name, position, role.
+    # is_staff и is_superuser — технические поля Django, не показываем в списке,
+    # чтобы не путать с нашей ролевой моделью (role).
+    list_display = ("username", "full_name", "email", "position", "role", "is_active")
+    list_filter = ("role", "is_active", "teams")
     search_fields = ("username", "full_name", "email")
 
     # Добавляем секцию «Профиль сотрудника» в форму редактирования.
