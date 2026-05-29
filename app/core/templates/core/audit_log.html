@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% load core_tags %}
+
+{% block content %}
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0"><i class="bi bi-clock-history"></i> Журнал действий</h1>
+        <span class="badge bg-secondary">{{ total_count }} записей</span>
+    </div>
+
+    {# ---------- Фильтры ---------- #}
+    <form method="get" class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small text-muted mb-1">Поиск</label>
+                    <input type="text" name="q" value="{{ request.GET.q|default:'' }}"
+                           class="form-control" placeholder="Номер заявки, клиент...">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted mb-1">Действие</label>
+                    <select name="action" class="form-select">
+                        <option value="">Все</option>
+                        {% for code, label in action_choices %}
+                            <option value="{{ code }}" {% if request.GET.action == code %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted mb-1">Сущность</label>
+                    <select name="entity_type" class="form-select">
+                        <option value="">Все</option>
+                        {% for code, label in entity_choices %}
+                            <option value="{{ code }}" {% if request.GET.entity_type == code %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted mb-1">Автор</label>
+                    <select name="actor" class="form-select">
+                        <option value="">Все</option>
+                        {% for emp in actors %}
+                            <option value="{{ emp.id }}" {% if request.GET.actor == emp.id|stringformat:"d" %}selected{% endif %}>
+                                {{ emp.full_name|default:emp.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-funnel"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    {# ---------- Таблица ---------- #}
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr class="small text-muted">
+                        <th class="ps-3" style="width: 150px;">Дата</th>
+                        <th style="width: 140px;">Автор</th>
+                        <th style="width: 110px;">Действие</th>
+                        <th style="width: 90px;">Сущность</th>
+                        <th>Подробности</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in page_obj %}
+                        <tr>
+                            <td class="ps-3 text-muted small text-nowrap">
+                                {{ log.created_at|date:"d.m.Y H:i" }}
+                            </td>
+                            <td class="small">
+                                {% if log.actor %}
+                                    {{ log.actor.full_name|default:log.actor.username }}
+                                {% else %}
+                                    <span class="text-muted">система</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.action == "create" %}
+                                    <span class="badge bg-success">Создание</span>
+                                {% elif log.action == "update" %}
+                                    <span class="badge bg-info text-dark">Изменение</span>
+                                {% elif log.action == "status_change" %}
+                                    <span class="badge bg-primary">Статус</span>
+                                {% elif log.action == "comment" %}
+                                    <span class="badge bg-secondary">Комментарий</span>
+                                {% elif log.action == "delete" %}
+                                    <span class="badge bg-danger">Удаление</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark">{{ log.action }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="small text-capitalize">{{ log.entity_type }}</td>
+                            <td class="small">
+                                {% if log.payload %}
+                                    {# Компактный вывод ключевых полей payload #}
+                                    {% if log.payload.number %}
+                                        <a href="{% url 'core:request_detail' log.payload.number %}">
+                                            {{ log.payload.number }}
+                                        </a>
+                                    {% endif %}
+                                    {% if log.payload.title %}
+                                        — {{ log.payload.title|truncatechars:50 }}
+                                    {% endif %}
+                                    {% if log.payload.from and log.payload.to %}
+                                        <code>{{ log.payload.from }}</code> &rarr;
+                                        <code>{{ log.payload.to }}</code>
+                                    {% endif %}
+                                    {% if log.payload.name %}
+                                        {{ log.payload.name|truncatechars:50 }}
+                                    {% endif %}
+                                    {% if log.payload.comment_id %}
+                                        (комментарий #{{ log.payload.comment_id }})
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                Записей не найдено.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {# ---------- Пагинация ---------- #}
+    {% if page_obj.has_other_pages %}
+        <nav class="mt-3">
+            <ul class="pagination pagination-sm justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{{ preserved_params }}&page={{ page_obj.previous_page_number }}">
+                            &laquo;
+                        </a>
+                    </li>
+                {% endif %}
+                {% for num in page_obj.paginator.page_range %}
+                    {% if num == page_obj.number %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > page_obj.number|add:"-4" and num < page_obj.number|add:"4" %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{{ preserved_params }}&page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{{ preserved_params }}&page={{ page_obj.next_page_number }}">
+                            &raquo;
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+
+{% endblock %}

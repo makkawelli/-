@@ -66,6 +66,12 @@
                                     <i class="bi bi-bar-chart"></i> Отчёты
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link{% if request.resolver_match.url_name == 'audit_log' %} active{% endif %}"
+                                   href="{% url 'core:audit_log' %}">
+                                    <i class="bi bi-clock-history"></i> Журнал
+                                </a>
+                            </li>
                         {% endif %}
                         {% if user.is_superuser %}
                             <li class="nav-item">

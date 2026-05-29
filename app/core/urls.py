@@ -40,4 +40,7 @@ urlpatterns = [
     path("reports/sla/",              views.report_sla_view,   name="report_sla"),
     path("reports/sla.csv",           views.report_sla_csv,    name="report_sla_csv"),
     path("reports/sla.xlsx",          views.report_sla_xlsx,   name="report_sla_xlsx"),
+
+    # Аудит-журнал (только для менеджера/админа).
+    path("audit/",                    views.audit_log_view,    name="audit_log"),
 ]

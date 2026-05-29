@@ -525,6 +525,79 @@ def report_sla_xlsx(request):
     return export_xlsx.export_sla_xlsx()
 
 
+# =============================================================================
+# ЖУРНАЛ ДЕЙСТВИЙ (Audit Log)
+# =============================================================================
+@login_required
+def audit_log_view(request):
+    """Страница просмотра аудит-журнала.
+
+    Доступ: admin и manager. Поддерживает фильтрацию по автору,
+    типу действия, типу сущности и полнотекстовый поиск.
+    """
+    if not permissions.can_view_reports(request.user):
+        return HttpResponseForbidden("Журнал действий вам недоступен.")
+
+    qs = models.AuditLog.objects.select_related("actor").order_by("-created_at")
+
+    # Фильтры.
+    action_filter = request.GET.get("action", "")
+    entity_filter = request.GET.get("entity_type", "")
+    actor_filter = request.GET.get("actor", "")
+    q_filter = request.GET.get("q", "")
+
+    if action_filter:
+        qs = qs.filter(action=action_filter)
+    if entity_filter:
+        qs = qs.filter(entity_type=entity_filter)
+    if actor_filter:
+        qs = qs.filter(actor_id=actor_filter)
+    if q_filter:
+        qs = qs.filter(
+            Q(payload__icontains=q_filter)
+            | Q(action__icontains=q_filter)
+            | Q(entity_type__icontains=q_filter)
+        )
+
+    # Выбор вариантов для фильтров.
+    action_choices = [
+        ("create", "Создание"),
+        ("update", "Изменение"),
+        ("status_change", "Смена статуса"),
+        ("comment", "Комментарий"),
+        ("delete", "Удаление"),
+    ]
+    entity_choices = [
+        ("request", "Заявка"),
+        ("client", "Клиент"),
+        ("employee", "Сотрудник"),
+    ]
+    actors = (
+        models.Employee.objects
+        .filter(id__in=models.AuditLog.objects.values_list("actor_id", flat=True).distinct())
+        .order_by("full_name", "username")
+    )
+
+    # Сохраняем GET-параметры для пагинации (без page).
+    preserved = request.GET.copy()
+    preserved.pop("page", None)
+    preserved_params = preserved.urlencode()
+
+    paginator = Paginator(qs, 50)
+    page_obj = paginator.get_page(request.GET.get("page") or 1)
+
+    context = {
+        "page_title": "Журнал действий",
+        "page_obj": page_obj,
+        "total_count": paginator.count,
+        "action_choices": action_choices,
+        "entity_choices": entity_choices,
+        "actors": actors,
+        "preserved_params": preserved_params,
+    }
+    return render(request, "core/audit_log.html", context)
+
+
 
 
 # =============================================================================
