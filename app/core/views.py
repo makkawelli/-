@@ -195,7 +195,16 @@ def request_create(request):
             messages.success(request, f"Заявка {req.number} создана.")
             return redirect("core:request_detail", number=req.number)
     else:
-        form = forms.RequestForm()
+        # Поддержка предзаполнения клиента через ?client=<id>
+        # (используется на карточке клиента кнопкой «Создать заявку»).
+        initial = {}
+        client_id = request.GET.get("client")
+        if client_id:
+            try:
+                initial["client"] = models.Client.objects.get(pk=client_id)
+            except (models.Client.DoesNotExist, ValueError):
+                pass
+        form = forms.RequestForm(initial=initial)
 
     context = {
         "page_title": "Новая заявка",
@@ -447,3 +456,148 @@ def report_sla_csv(request):
     writer.writerow(["Итого", "", t["total_closed"], t["in_time"], t["overdue"],
                      "" if t["sla_pct"] is None else t["sla_pct"], t["open_overdue"]])
     return response
+
+
+
+
+# =============================================================================
+# КЛИЕНТЫ
+# =============================================================================
+@login_required
+def client_list(request):
+    """Страница со списком клиентов: поиск, пагинация, счётчики заявок."""
+    if not permissions.can_view_clients(request.user):
+        return HttpResponseForbidden("Раздел клиентов вам недоступен.")
+
+    qs = (
+        models.Client.objects
+        .annotate(
+            requests_total=Count("requests"),
+            requests_open=Count(
+                "requests", filter=Q(requests__status__is_terminal=False),
+            ),
+        )
+        .order_by("name")
+    )
+
+    # Поиск.
+    filter_form = forms.ClientFilterForm(request.GET or None)
+    if filter_form.is_valid() and filter_form.cleaned_data.get("q"):
+        term = filter_form.cleaned_data["q"]
+        qs = qs.filter(
+            Q(name__icontains=term)
+            | Q(contact_person__icontains=term)
+            | Q(phone__icontains=term)
+            | Q(email__icontains=term)
+        )
+
+    paginator = Paginator(qs, 30)
+    page_obj = paginator.get_page(request.GET.get("page") or 1)
+
+    context = {
+        "page_title": "Клиенты",
+        "filter_form": filter_form,
+        "page_obj": page_obj,
+        "total_count": paginator.count,
+        "can_create": permissions.can_edit_client(request.user),
+    }
+    return render(request, "core/client_list.html", context)
+
+
+@login_required
+def client_detail(request, pk: int):
+    """Карточка клиента: данные, статистика, история заявок."""
+    if not permissions.can_view_clients(request.user):
+        return HttpResponseForbidden("Раздел клиентов вам недоступен.")
+
+    client = get_object_or_404(models.Client, pk=pk)
+
+    # Заявки клиента — с учётом видимости для текущего пользователя.
+    visible_qs = permissions.visible_requests_qs(request.user)
+    client_requests = (
+        visible_qs.filter(client=client)
+        .order_by("-created_at")
+    )
+
+    # Сводка по заявкам.
+    stats = {
+        "total":   client_requests.count(),
+        "open":    client_requests.filter(status__is_terminal=False).count(),
+        "closed":  client_requests.filter(status__is_terminal=True).count(),
+    }
+
+    paginator = Paginator(client_requests, 20)
+    page_obj = paginator.get_page(request.GET.get("page") or 1)
+
+    context = {
+        "page_title": client.name,
+        "client": client,
+        "stats": stats,
+        "page_obj": page_obj,
+        "can_edit": permissions.can_edit_client(request.user),
+        "can_create_request": permissions.can_create_request(request.user),
+    }
+    return render(request, "core/client_detail.html", context)
+
+
+@login_required
+def client_create(request):
+    """Создание нового клиента."""
+    if not permissions.can_edit_client(request.user):
+        return HttpResponseForbidden("У вас нет прав создавать клиентов.")
+
+    if request.method == "POST":
+        form = forms.ClientForm(request.POST)
+        if form.is_valid():
+            client = form.save()
+            models.AuditLog.objects.create(
+                actor=request.user,
+                action="create",
+                entity_type="client",
+                entity_id=client.id,
+                payload={"name": client.name},
+            )
+            messages.success(request, f"Клиент «{client.name}» создан.")
+            return redirect("core:client_detail", pk=client.pk)
+    else:
+        form = forms.ClientForm()
+
+    context = {
+        "page_title": "Новый клиент",
+        "form": form,
+        "is_create": True,
+    }
+    return render(request, "core/client_form.html", context)
+
+
+@login_required
+def client_edit(request, pk: int):
+    """Редактирование данных клиента."""
+    if not permissions.can_edit_client(request.user):
+        return HttpResponseForbidden("У вас нет прав редактировать клиентов.")
+
+    client = get_object_or_404(models.Client, pk=pk)
+
+    if request.method == "POST":
+        form = forms.ClientForm(request.POST, instance=client)
+        if form.is_valid():
+            obj = form.save()
+            models.AuditLog.objects.create(
+                actor=request.user,
+                action="update",
+                entity_type="client",
+                entity_id=obj.id,
+                payload={"name": obj.name},
+            )
+            messages.success(request, "Данные клиента сохранены.")
+            return redirect("core:client_detail", pk=obj.pk)
+    else:
+        form = forms.ClientForm(instance=client)
+
+    context = {
+        "page_title": f"Редактирование: {client.name}",
+        "form": form,
+        "client": client,
+        "is_create": False,
+    }
+    return render(request, "core/client_form.html", context)

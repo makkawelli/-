@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% load core_tags %}
+
+{% block content %}
+
+    {# ---------- Шапка карточки ---------- #}
+    <div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+        <div>
+            <div class="text-muted small mb-1">
+                <a href="{% url 'core:client_list' %}" class="text-muted text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> Все клиенты
+                </a>
+            </div>
+            <h1 class="h3 mb-1">
+                <i class="bi bi-building"></i>
+                {{ client.name }}
+            </h1>
+            <div class="text-muted small">
+                Зарегистрирован: {{ client.created_at|date:"d.m.Y" }}
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            {% if can_create_request %}
+                <a href="{% url 'core:request_create' %}?client={{ client.pk }}"
+                   class="btn btn-primary">
+                    <i class="bi bi-plus-lg"></i> Создать заявку
+                </a>
+            {% endif %}
+            {% if can_edit %}
+                <a href="{% url 'core:client_edit' client.pk %}"
+                   class="btn btn-outline-secondary">
+                    <i class="bi bi-pencil"></i> Редактировать
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ---------- Сводка ---------- #}
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-primary h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Заявок всего</div>
+                    <div class="display-6 text-primary">{{ stats.total }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-success h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Открытых</div>
+                    <div class="display-6 text-success">{{ stats.open }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Закрытых</div>
+                    <div class="display-6">{{ stats.closed }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        {# ---------- Левая колонка: контакты ---------- #}
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h2 class="h6 mb-0">
+                        <i class="bi bi-info-circle"></i> Контактные данные
+                    </h2>
+                </div>
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item">
+                        <div class="text-muted small">Контактное лицо</div>
+                        <div>{{ client.contact_person|default:"—" }}</div>
+                    </li>
+                    <li class="list-group-item">
+                        <div class="text-muted small">Телефон</div>
+                        <div>
+                            {% if client.phone %}
+                                <a href="tel:{{ client.phone }}" class="text-decoration-none">
+                                    <i class="bi bi-telephone"></i>
+                                    {{ client.phone }}
+                                </a>
+                            {% else %}—{% endif %}
+                        </div>
+                    </li>
+                    <li class="list-group-item">
+                        <div class="text-muted small">Email</div>
+                        <div>
+                            {% if client.email %}
+                                <a href="mailto:{{ client.email }}" class="text-decoration-none">
+                                    <i class="bi bi-envelope"></i>
+                                    {{ client.email }}
+                                </a>
+                            {% else %}—{% endif %}
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        {# ---------- Правая колонка: история заявок ---------- #}
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h2 class="h6 mb-0">
+                        <i class="bi bi-list-ul"></i>
+                        История заявок
+                    </h2>
+                    <span class="badge bg-light text-dark">{{ stats.total }}</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr class="small text-muted">
+                                <th class="ps-3">Номер</th>
+                                <th>Тема</th>
+                                <th>Статус</th>
+                                <th>Приоритет</th>
+                                <th class="text-end pe-3">Создана</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in page_obj %}
+                                <tr>
+                                    <td class="ps-3">
+                                        <a href="{% url 'core:request_detail' r.number %}"
+                                           class="text-decoration-none fw-semibold">
+                                            {{ r.number }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'core:request_detail' r.number %}"
+                                           class="text-decoration-none text-body">
+                                            {{ r.title|truncatechars:40 }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ r.status|status_color }}">
+                                            {{ r.status.name }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ r.priority|priority_color }} text-dark">
+                                            {{ r.priority.name }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-3 small text-muted text-nowrap">
+                                        {{ r.created_at|date:"d.m.Y" }}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        У этого клиента пока нет заявок.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {# Пагинация по заявкам клиента #}
+            {% if page_obj.paginator.num_pages > 1 %}
+                <nav class="mt-3">
+                    <ul class="pagination pagination-sm justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo;</a>
+                            </li>
+                        {% endif %}
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">&raquo;</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        </div>
+    </div>
+
+{% endblock %}

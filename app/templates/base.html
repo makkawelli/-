@@ -47,9 +47,9 @@
                                 <i class="bi bi-list-ul"></i> Заявки
                             </a>
                         </li>
-                        {# «Клиенты» и «Отчёты» появятся на следующих шагах. #}
                         <li class="nav-item">
-                            <a class="nav-link disabled" aria-disabled="true" href="#">
+                            <a class="nav-link{% if request.resolver_match.url_name == 'client_list' or request.resolver_match.url_name == 'client_detail' or request.resolver_match.url_name == 'client_create' or request.resolver_match.url_name == 'client_edit' %} active{% endif %}"
+                               href="{% url 'core:client_list' %}">
                                 <i class="bi bi-people"></i> Клиенты
                             </a>
                         </li>

@@ -71,6 +71,19 @@ def can_view_reports(user) -> bool:
     return _role(user) in {"admin", "manager"}
 
 
+def can_view_clients(user) -> bool:
+    """Видеть раздел клиентов: все сотрудники компании, кроме внешних клиентов."""
+    return _role(user) in {"admin", "manager", "operator", "executor"}
+
+
+def can_edit_client(user) -> bool:
+    """Создавать и править карточки клиентов: админ/менеджер/оператор.
+
+    Исполнитель — только просмотр.
+    """
+    return _role(user) in {"admin", "manager", "operator"}
+
+
 # ---------- Видимость списка заявок -----------------------------------------
 
 def visible_requests_qs(user):

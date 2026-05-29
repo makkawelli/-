@@ -23,6 +23,12 @@ urlpatterns = [
                                                      views.request_transition,  name="request_transition"),
     path("requests/<str:number>/comment/",           views.request_add_comment, name="request_add_comment"),
 
+    # Клиенты.
+    path("clients/",                  views.client_list,    name="client_list"),
+    path("clients/new/",              views.client_create,  name="client_create"),
+    path("clients/<int:pk>/",         views.client_detail,  name="client_detail"),
+    path("clients/<int:pk>/edit/",    views.client_edit,    name="client_edit"),
+
     # Отчёты (только для менеджера/админа).
     path("reports/",                  views.reports_index,     name="reports_index"),
     path("reports/by-period/",        views.report_period,     name="report_period"),

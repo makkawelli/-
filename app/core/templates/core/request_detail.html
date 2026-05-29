@@ -196,7 +196,12 @@
                 <ul class="list-group list-group-flush small">
                     <li class="list-group-item d-flex justify-content-between">
                         <span class="text-muted">Клиент</span>
-                        <strong class="text-end">{{ req.client.name }}</strong>
+                        <strong class="text-end">
+                            <a href="{% url 'core:client_detail' req.client.pk %}"
+                               class="text-decoration-none">
+                                {{ req.client.name }}
+                            </a>
+                        </strong>
                     </li>
                     {% if req.client.contact_person %}
                         <li class="list-group-item d-flex justify-content-between">

@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-people me-1"></i>
+            Клиенты
+            <span class="text-muted fs-6">({{ total_count }})</span>
+        </h1>
+        {% if can_create %}
+            <a href="{% url 'core:client_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Новый клиент
+            </a>
+        {% endif %}
+    </div>
+
+    {# ---------- Поиск ---------- #}
+    <form method="get" class="card mb-4">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-9">
+                    {{ filter_form.q }}
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Найти
+                    </button>
+                    <a href="{% url 'core:client_list' %}" class="btn btn-outline-secondary">
+                        Сброс
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    {# ---------- Таблица ---------- #}
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr class="small text-muted">
+                        <th class="ps-3">Название</th>
+                        <th>Контактное лицо</th>
+                        <th>Телефон</th>
+                        <th>Email</th>
+                        <th class="text-end">Заявок</th>
+                        <th class="text-end pe-3">Открытых</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in page_obj %}
+                        <tr>
+                            <td class="ps-3">
+                                <a href="{% url 'core:client_detail' c.pk %}"
+                                   class="text-decoration-none fw-semibold">
+                                    {{ c.name }}
+                                </a>
+                            </td>
+                            <td class="small">{{ c.contact_person|default:"—" }}</td>
+                            <td class="small">
+                                {% if c.phone %}
+                                    <a href="tel:{{ c.phone }}" class="text-decoration-none">
+                                        {{ c.phone }}
+                                    </a>
+                                {% else %}—{% endif %}
+                            </td>
+                            <td class="small">
+                                {% if c.email %}
+                                    <a href="mailto:{{ c.email }}" class="text-decoration-none">
+                                        {{ c.email }}
+                                    </a>
+                                {% else %}—{% endif %}
+                            </td>
+                            <td class="text-end">{{ c.requests_total }}</td>
+                            <td class="text-end pe-3">
+                                {% if c.requests_open %}
+                                    <span class="badge bg-primary">{{ c.requests_open }}</span>
+                                {% else %}
+                                    <span class="text-muted">0</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-5">
+                                <i class="bi bi-inbox display-6 d-block"></i>
+                                Клиенты не найдены.
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {# ---------- Пагинация ---------- #}
+    {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="mt-3">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}page={{ page_obj.previous_page_number }}">
+                            &laquo;
+                        </a>
+                    </li>
+                {% endif %}
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}page={{ page_obj.next_page_number }}">
+                            &raquo;
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+
+{% endblock %}

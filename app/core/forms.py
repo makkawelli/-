@@ -175,6 +175,49 @@ class CommentForm(forms.ModelForm):
 # =============================================================================
 # Фильтры списка заявок
 # =============================================================================
+# =============================================================================
+# Клиенты
+# =============================================================================
+class ClientForm(forms.ModelForm):
+    """Форма создания/редактирования клиента."""
+
+    class Meta:
+        model = models.Client
+        fields = ["name", "contact_person", "phone", "email"]
+        widgets = {
+            "name":            forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Например: ООО «Ромашка»",
+            }),
+            "contact_person":  forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Иванов Иван Иванович",
+            }),
+            "phone":           forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "+7 (495) 123-45-67",
+            }),
+            "email":           forms.EmailInput(attrs={
+                "class": "form-control",
+                "placeholder": "info@example.com",
+            }),
+        }
+
+
+class ClientFilterForm(forms.Form):
+    """GET-форма поиска клиентов."""
+    q = forms.CharField(
+        required=False, label="",
+        widget=forms.TextInput(attrs={
+            "class": "form-control",
+            "placeholder": "Поиск по названию, контактному лицу, телефону, email...",
+        }),
+    )
+
+
+# =============================================================================
+# Фильтры списка заявок
+# =============================================================================
 class RequestFilterForm(forms.Form):
     """GET-форма фильтрации списка заявок.
 
