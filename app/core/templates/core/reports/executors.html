@@ -12,7 +12,10 @@
             <h1 class="h3 mb-0">Загрузка исполнителей</h1>
         </div>
         <a href="{% url 'core:report_executors_csv' %}" class="btn btn-outline-success">
-            <i class="bi bi-download"></i> Скачать CSV
+            <i class="bi bi-download"></i> CSV
+        </a>
+        <a href="{% url 'core:report_executors_xlsx' %}" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel"></i> Excel
         </a>
     </div>
 

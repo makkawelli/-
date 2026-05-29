@@ -13,7 +13,11 @@
         </div>
         <a href="{% url 'core:report_period_csv' %}?date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}"
            class="btn btn-outline-success">
-            <i class="bi bi-download"></i> Скачать CSV
+            <i class="bi bi-download"></i> CSV
+        </a>
+        <a href="{% url 'core:report_period_xlsx' %}?date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}"
+           class="btn btn-success">
+            <i class="bi bi-file-earmark-excel"></i> Excel
         </a>
     </div>
 

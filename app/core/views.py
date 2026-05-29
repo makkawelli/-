@@ -496,6 +496,35 @@ def report_sla_csv(request):
     return response
 
 
+# ----- XLSX-экспорт ----------------------------------------------------------
+@login_required
+def report_period_xlsx(request):
+    forbidden = _require_reports_access(request.user)
+    if forbidden:
+        return forbidden
+    from . import export_xlsx
+    date_from, date_to = _read_period_from_request(request)
+    return export_xlsx.export_period_xlsx(date_from, date_to)
+
+
+@login_required
+def report_executors_xlsx(request):
+    forbidden = _require_reports_access(request.user)
+    if forbidden:
+        return forbidden
+    from . import export_xlsx
+    return export_xlsx.export_executors_xlsx()
+
+
+@login_required
+def report_sla_xlsx(request):
+    forbidden = _require_reports_access(request.user)
+    if forbidden:
+        return forbidden
+    from . import export_xlsx
+    return export_xlsx.export_sla_xlsx()
+
+
 
 
 # =============================================================================

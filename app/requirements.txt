@@ -7,3 +7,4 @@
 Django>=5.2,<5.3
 psycopg[binary]==3.2.13      # современный драйвер PostgreSQL (на Windows ставится без pg_config)
 python-dotenv==1.0.1         # чтение настроек из файла .env
+openpyxl==3.1.5              # экспорт отчётов в XLSX (Excel)
