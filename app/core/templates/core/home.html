@@ -112,7 +112,9 @@
                         </thead>
                         <tbody>
                             {% for st in status_distribution %}
-                                <tr>
+                                <tr class="clickable-row"
+                                    onclick="window.location='{% url 'core:request_list' %}?status={{ st.id }}'"
+                                    title="Открыть заявки в статусе «{{ st.name }}»">
                                     <td class="ps-3">
                                         {% if st.is_terminal %}
                                             <i class="bi bi-check-circle text-muted"></i>
@@ -129,6 +131,9 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+            <div class="text-muted small mt-2">
+                Кликните по строке, чтобы открыть заявки этого статуса.
             </div>
         </div>
 
@@ -149,19 +154,11 @@
                             </thead>
                             <tbody>
                                 {% for r in my_requests %}
-                                    <tr>
-                                        <td class="ps-3 small text-muted">
-                                            <a href="{% url 'core:request_detail' r.number %}"
-                                               class="text-decoration-none">
-                                                {{ r.number }}
-                                            </a>
-                                        </td>
-                                        <td>
-                                            <a href="{% url 'core:request_detail' r.number %}"
-                                               class="text-decoration-none text-body">
-                                                {{ r.title|truncatechars:35 }}
-                                            </a>
-                                        </td>
+                                    <tr class="clickable-row"
+                                        onclick="window.location='{% url 'core:request_detail' r.number %}'"
+                                        title="Открыть заявку {{ r.number }}">
+                                        <td class="ps-3 small text-muted">{{ r.number }}</td>
+                                        <td>{{ r.title|truncatechars:35 }}</td>
                                         <td class="small">{{ r.client.name|truncatechars:20 }}</td>
                                         <td>
                                             <span class="badge bg-secondary">{{ r.status.name }}</span>

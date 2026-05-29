@@ -231,12 +231,12 @@ def live_dashboard_metrics() -> dict:
 
     open_qs = models.Request.objects.filter(status__is_terminal=False)
     by_status = (
-        open_qs.values("status__name", "status__code")
+        open_qs.values("status__id", "status__name", "status__code")
         .annotate(cnt=Count("id"))
         .order_by("status__order_num")
     )
     by_priority = (
-        open_qs.values("priority__name", "priority__code")
+        open_qs.values("priority__id", "priority__name", "priority__code")
         .annotate(cnt=Count("id"))
         .order_by("priority__sla_hours")
     )

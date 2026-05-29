@@ -61,7 +61,9 @@
                     <table class="table m-0">
                         <tbody>
                             {% for s in metrics.by_status %}
-                                <tr>
+                                <tr class="clickable-row"
+                                    onclick="window.location='{% url 'core:request_list' %}?status={{ s.status__id }}&only_open=on'"
+                                    title="Открыть заявки в статусе «{{ s.status__name }}»">
                                     <td class="ps-3">{{ s.status__name }}</td>
                                     <td class="text-end pe-3">
                                         <span class="badge bg-light text-dark">{{ s.cnt }}</span>
@@ -83,7 +85,9 @@
                     <table class="table m-0">
                         <tbody>
                             {% for p in metrics.by_priority %}
-                                <tr>
+                                <tr class="clickable-row"
+                                    onclick="window.location='{% url 'core:request_list' %}?priority={{ p.priority__id }}&only_open=on'"
+                                    title="Открыть заявки приоритета «{{ p.priority__name }}»">
                                     <td class="ps-3">{{ p.priority__name }}</td>
                                     <td class="text-end pe-3">
                                         <span class="badge bg-light text-dark">{{ p.cnt }}</span>
