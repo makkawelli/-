@@ -196,6 +196,7 @@ def report_sla() -> dict:
         rows.append({
             "priority": p.name,
             "priority_code": p.code,
+            "priority_id": p.id,
             "sla_hours": p.sla_hours,
             "in_time": in_time,
             "overdue": overdue,

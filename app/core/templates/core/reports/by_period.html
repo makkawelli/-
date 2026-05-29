@@ -116,22 +116,31 @@
 {% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
+(function() {
+    const labels = {{ chart.labels|safe }};
+    const created = {{ chart.created|safe }};
+    const closed = {{ chart.closed|safe }};
+    const listUrl = "{% url 'core:request_list' %}";
+
+    // Массив ISO-дат для drill-down (date_from -> date_to одного дня).
+    const isoDates = [{% for r in rows %}"{{ r.date|date:'Y-m-d' }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+
     const ctx = document.getElementById("chartByPeriod").getContext("2d");
-    new Chart(ctx, {
+    const chart = new Chart(ctx, {
         type: "bar",
         data: {
-            labels: {{ chart.labels|safe }},
+            labels: labels,
             datasets: [
                 {
                     label: "Создано",
-                    data: {{ chart.created|safe }},
+                    data: created,
                     backgroundColor: "rgba(13, 110, 253, 0.7)",
                     borderColor: "rgba(13, 110, 253, 1)",
                     borderWidth: 1,
                 },
                 {
                     label: "Закрыто",
-                    data: {{ chart.closed|safe }},
+                    data: closed,
                     backgroundColor: "rgba(25, 135, 84, 0.6)",
                     borderColor: "rgba(25, 135, 84, 1)",
                     borderWidth: 1,
@@ -147,7 +156,21 @@
                 legend: { position: "top" },
                 title: { display: false },
             },
+            // Drill-down: клик по столбцу -> список заявок на эту дату.
+            onClick: function(event, elements) {
+                if (elements.length > 0) {
+                    const idx = elements[0].index;
+                    const isoDate = isoDates[idx];
+                    window.location = listUrl + "?date_from=" + isoDate + "&date_to=" + isoDate;
+                }
+            },
         },
     });
+    // Курсор pointer при наведении на столбцы.
+    ctx.canvas.addEventListener("mousemove", function(e) {
+        const points = chart.getElementsAtEventForMode(e, "nearest", {intersect: true}, false);
+        ctx.canvas.style.cursor = points.length ? "pointer" : "default";
+    });
+})();
 </script>
 {% endblock %}

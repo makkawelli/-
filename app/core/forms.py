@@ -253,3 +253,15 @@ class RequestFilterForm(forms.Form):
         required=False, label="Только открытые",
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
     )
+    overdue = forms.BooleanField(
+        required=False, label="Только просроченные",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+    date_from = forms.DateField(
+        required=False, label="Создана с",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )
+    date_to = forms.DateField(
+        required=False, label="Создана по",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+    )

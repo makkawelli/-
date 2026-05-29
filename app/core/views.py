@@ -108,6 +108,14 @@ def request_list(request):
             qs = qs.filter(assignee=cd["assignee"])
         if cd.get("only_open"):
             qs = qs.filter(status__is_terminal=False)
+        if cd.get("overdue"):
+            from django.utils import timezone as tz
+            qs = qs.filter(due_date__lt=tz.now(), status__is_terminal=False)
+        # Drill-down: фильтр по дате создания (из графика «Динамика по периоду»).
+        if cd.get("date_from"):
+            qs = qs.filter(created_at__date__gte=cd["date_from"])
+        if cd.get("date_to"):
+            qs = qs.filter(created_at__date__lte=cd["date_to"])
 
     # Пагинация.
     paginator = Paginator(qs, 20)
