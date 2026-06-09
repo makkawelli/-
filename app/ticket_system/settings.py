@@ -149,8 +149,21 @@ MEDIA_ROOT = BASE_DIR / "media"
 # ============================================================================
 # EMAIL (для разработки — пишем письма в консоль)
 # ============================================================================
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-DEFAULT_FROM_EMAIL = "noreply@ticket-system.local"
+# Отключаем вывод в консоль
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Включаем отправку через реальный SMTP Gmail
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+
+EMAIL_HOST_USER = 'antoshka110704@gmail.com'
+EMAIL_HOST_PASSWORD = 'whlsmwhonryisnkf'  # Вставлять без пробелов
+
+# Адрес отправителя по умолчанию (будет красиво отображаться в письме)
+DEFAULT_FROM_EMAIL = 'ИС «Учёт заявок» <antoshka110704@gmail.com>'
 
 # Базовый URL сайта — используется в email-уведомлениях для построения
 # абсолютных ссылок. На production переопределить через .env.
