@@ -365,8 +365,8 @@
                 {% block topbar_title %}{{ page_title|default:"" }}{% endblock %}
             </span>
         </div>
-       <div class="sd-topbar__right">
-    {% if not user.is_authenticated %}
+ <div class="sd-topbar__right">
+    {% if not user.is_authenticated and request.resolver_match.url_name != 'login' %}
         <a href="{% url 'login' %}" class="btn btn-sm btn-primary">
             <i class="bi bi-box-arrow-in-right"></i> Войти
         </a>
